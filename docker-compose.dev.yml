@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:18
+    platform: 'linux/amd64'
+    restart: always
+    environment:
+      - POSTGRES_DB=${DATABASE_DB}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    volumes:
+      - ./.docker/.data/database:/var/lib/postgresql
+    ports:
+      - ${DATABASE_PORT_OUT}:5432
+
+  app:
+    #        image: ${BACKEND_IMAGE:-registry.gitlab.com/avaleon/business-club-backend:latest}
+    build: .
+    env_file: .env
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+
+  s3:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    volumes:
+      - ./.docker/.data/s3:/data
+    environment:
+      MINIO_ROOT_USER: club
+      MINIO_ROOT_PASSWORD: club123456
+      MINIO_SERVER_URL: http://localhost:9000
+    command: server /data --console-address ":9090"
