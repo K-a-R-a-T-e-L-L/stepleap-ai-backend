@@ -13,8 +13,8 @@ services:
             - ${DATABASE_PORT_OUT}:5432
 
     app:
-#        image: ${BACKEND_IMAGE:-registry.gitlab.com/avaleon/business-club-backend:latest}
-        build: .
+        image: ${BACKEND_IMAGE:-registry.gitlab.com/avaleon/business-club-backend:latest}
+#        build: .
         env_file: .env
         restart: always
         ports:
@@ -30,17 +30,7 @@ services:
         volumes:
             - ./.docker/.data/s3:/data
         environment:
-            MINIO_ROOT_USER: club
+            MINIO_ROOT_USER: club-ai
             MINIO_ROOT_PASSWORD: club123456
             MINIO_SERVER_URL: http://localhost:9000
         command: server /data --console-address ":9090"
-
-    frontend:
-        image: ${FRONTEND_IMAGE:-registry.gitlab.com/avaleon/business-club-frontend:latest}
-        restart: unless-stopped
-        environment:
-            NEXT_PUBLIC_API_URL: https://api-bclub.alexlnos.com/api
-        volumes:
-            - ./.cache:/app/.cache
-        ports:
-            - "8000:3000"
