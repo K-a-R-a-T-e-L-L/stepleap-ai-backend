@@ -13,12 +13,12 @@ services:
             - ${DATABASE_PORT_OUT}:5432
 
     app:
-        image: ${BACKEND_IMAGE:-registry.gitlab.com/avaleon/business-club-backend:latest}
+        image: ${BACKEND_IMAGE:-registry.gitlab.com/avaleon/business-club-ai:latest}
 #        build: .
         env_file: .env
         restart: always
         ports:
-            - "3200:3000"
+            - "3200:3200"
         depends_on:
             - db
 
