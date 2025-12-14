@@ -47,6 +47,14 @@ export class FileService {
         }
     }
 
+    async createFileFromBuffer(buf: Buffer, filename: string, mimeType: string) {
+        const newFile = new File()
+
+        newFile.originalUrl = await this.uploadFile(buf, filename, mimeType)
+
+        return newFile.save()
+    }
+
     async uploadImage(image: string | Buffer, filename: string = null, s3Bucket: string = 'bclub-test') {
         let buffer = image
 

@@ -23,6 +23,10 @@ import { NotificationModule } from './notification/notification.module'
 import { RandomCoffeeModule } from './random-coffee/random-coffee.module'
 // import { GroupModule } from './group/group.module';
 import { AiModule } from './ai/ai.module'
+import { GeminiModule } from './gemini/gemini.module';
+import { ElevenlabsModule } from './elevenlabs/elevenlabs.module';
+import { KlingModule } from './kling/kling.module';
+import { CaptionsModule } from './captions/captions.module';
 
 @Module({
     imports: [
@@ -76,6 +80,10 @@ import { AiModule } from './ai/ai.module'
         ChatModule,
         RandomCoffeeModule,
         AiModule,
+        GeminiModule,
+        ElevenlabsModule,
+        KlingModule,
+        CaptionsModule,
         // GroupModule
     ],
     controllers: [],

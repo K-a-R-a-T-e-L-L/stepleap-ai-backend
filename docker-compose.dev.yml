@@ -12,16 +12,6 @@ services:
     ports:
       - ${DATABASE_PORT_OUT}:5432
 
-  app:
-    #        image: ${BACKEND_IMAGE:-registry.gitlab.com/avaleon/business-club-backend:latest}
-    build: .
-    env_file: .env
-    restart: always
-    ports:
-      - "3000:3000"
-    depends_on:
-      - db
-
   s3:
     image: minio/minio
     ports:
