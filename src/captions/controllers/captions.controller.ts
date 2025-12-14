@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { UserDockGetOne } from '@common/swagger/user.swagger.helper'
 import { UserAuthType } from '@common/decorators/auth.helpers'
@@ -9,12 +9,9 @@ import { CreateVideoDto } from '../dto/create-video.dto'
 @ApiTags('Captions')
 @Controller('captions')
 export class CaptionsController {
-    constructor(
-        private readonly captionsService: CaptionsService
-    ) {
-    }
+    constructor(private readonly captionsService: CaptionsService) {}
 
-    @Get('')
+    @Post('')
     async createVideo(@Body() createVideoDto: any) {
         return this.captionsService.createVideo(createVideoDto.imageReference, createVideoDto.audioReference)
     }
