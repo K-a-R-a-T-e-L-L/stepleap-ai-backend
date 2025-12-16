@@ -25,6 +25,10 @@ export class File extends BaseEntity {
     originalUrl: string
 
     @ApiProperty()
+    @Column({ name: 'original_url_png', nullable: true })
+    originalUrlPng?: string
+
+    @ApiProperty()
     @Column({ name: 'image_120_url', nullable: true })
     image120Url?: string
 
