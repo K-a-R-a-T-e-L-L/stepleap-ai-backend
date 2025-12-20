@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { FileService } from '../../file/services/file.service'
+import { ErrorDto } from '@common/errors/error.dto'
+import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
 
 @Injectable()
 export class CaptionsService {
     constructor(
         private readonly configService: ConfigService,
-        private readonly fileService: FileService
-    ) {
-    }
+        private readonly fileService: FileService,
+    ) {}
 
     async createVideo(imageReference: string, audioReference: string) {
         const imageFile = await (await fetch(imageReference)).blob()
@@ -19,38 +20,48 @@ export class CaptionsService {
         formData.append('image_reference', imageFile)
         formData.append('audio_reference', audioFile)
 
-        const response = await fetch("https://api.mirage.app/v1/videos", {
-            method: "POST",
+        const response = await fetch('https://api.mirage.app/v1/videos', {
+            method: 'POST',
             headers: {
-                "x-api-key": this.configService.get('MIRAGE_SECRET_KEY')
+                'x-api-key': this.configService.get('MIRAGE_SECRET_KEY'),
             },
-            body: formData
-        });
+            body: formData,
+        })
 
         const data = await response.json()
+
+        if (data.error) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, data.error.message)
+        }
 
         return data
     }
 
     async checkVideoStatus(videoId: string) {
         const response = await fetch(`https://api.mirage.app/v1/videos/${videoId}`, {
-            method: "GET",
+            method: 'GET',
             headers: {
-                "x-api-key": this.configService.get('MIRAGE_SECRET_KEY')
-            }
-        });
+                'x-api-key': this.configService.get('MIRAGE_SECRET_KEY'),
+            },
+        })
 
-        return response.json()
+        const data = await response.json()
+
+        if (data.error) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, data.error.message)
+        }
+
+        return data
     }
 
     async downloadVideo(videoId: string) {
         const response = await fetch(`https://api.mirage.app/v1/videos/${videoId}/content`, {
-            method: "GET",
+            method: 'GET',
             headers: {
-                "x-api-key": this.configService.get('MIRAGE_SECRET_KEY')
+                'x-api-key': this.configService.get('MIRAGE_SECRET_KEY'),
             },
-            redirect: "follow"
-        });
+            redirect: 'follow',
+        })
 
         const buf = Buffer.from(await response.arrayBuffer())
 
