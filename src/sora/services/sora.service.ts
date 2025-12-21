@@ -5,7 +5,7 @@ import { ErrorDto } from '@common/errors/error.dto'
 import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
 import { ProxyAgent } from 'undici'
 import OpenAI from 'openai'
-import { CreateVideoDto } from '../dto/create-video.dto'
+import { CreateVideoDto } from '../dto/create-sora-video.dto'
 
 @Injectable()
 export class SoraService {

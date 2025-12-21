@@ -4,7 +4,7 @@ import { UserDockGetOne, UserDockPost } from '@common/swagger/user.swagger.helpe
 import { UserAuthType } from '@common/decorators/auth.helpers'
 import { File } from '../../file/entity/file.entity'
 import { SoraService } from '../services/sora.service'
-import { CreateVideoDto } from '../dto/create-video.dto'
+import { CreateVideoDto } from '../dto/create-sora-video.dto'
 
 @ApiTags('Sora')
 @Controller('sora')
