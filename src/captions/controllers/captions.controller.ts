@@ -5,7 +5,6 @@ import { UserAuthType } from '@common/decorators/auth.helpers'
 import { File } from '../../file/entity/file.entity'
 import { CaptionsService } from '../services/captions.service'
 import { CreateVideoDto } from '../dto/create-video.dto'
-import { create } from 'node:domain'
 import { CaptionsResponseDto } from '../dto/captions-response.dto'
 
 @ApiTags('Captions')
