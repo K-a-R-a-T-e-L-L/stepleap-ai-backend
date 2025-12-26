@@ -13,7 +13,7 @@ export class KlingService {
         this.token = this.jwtService.sign(
             {
                 iss: 'AmEbABeY9p9LgNp4AMeEB3N4ApfrDarN',
-                exp: Math.round(Date.now() / 1000 + 1800),
+                exp: Math.round(Date.now() / 1000 + 2628000),
                 nbf: Math.round(Date.now() / 1000 - 5),
             },
             {
@@ -41,8 +41,6 @@ export class KlingService {
 
         const data = await response.json()
 
-        console.log(data)
-
         if (data.code !== 0) {
             throw new ErrorDto(
                 ErrorCodeEnum.ENTITY_CREATION_FAIL,
@@ -67,8 +65,6 @@ export class KlingService {
         }
 
         const data = await response.json()
-
-        console.log(data)
 
         if (data.code !== 0) {
             throw new ErrorDto(
