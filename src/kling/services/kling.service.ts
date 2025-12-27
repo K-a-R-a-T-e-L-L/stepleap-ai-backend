@@ -36,12 +36,14 @@ export class KlingService {
         })
 
         if (!response.ok) {
+            console.error(response)
             throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, 'Error while calling Kling API')
         }
 
         const data = await response.json()
 
         if (data.code !== 0) {
+            console.error(`Kling API returned an error: ${data.code} ${data.message}`)
             throw new ErrorDto(
                 ErrorCodeEnum.ENTITY_CREATION_FAIL,
                 `Kling API returned an error: ${data.code} ${data.message}`,
