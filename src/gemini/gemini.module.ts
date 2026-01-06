@@ -8,5 +8,6 @@ import { FileModule } from 'src/file/file.module'
     imports: [FileModule],
     controllers: [GeminiController],
     providers: [GeminiService],
+    exports: [GeminiService],
 })
 export class GeminiModule {}
