@@ -8,5 +8,6 @@ import { JwtModule } from '@nestjs/jwt'
     imports: [FileModule, JwtModule],
     controllers: [CaptionsController],
     providers: [CaptionsService],
+    exports: [CaptionsService],
 })
 export class CaptionsModule {}

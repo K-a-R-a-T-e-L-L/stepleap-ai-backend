@@ -28,6 +28,7 @@ import { ElevenlabsModule } from './elevenlabs/elevenlabs.module'
 import { KlingModule } from './kling/kling.module'
 import { CaptionsModule } from './captions/captions.module'
 import { SoraModule } from './sora/sora.module'
+import { PipelineModule } from './pipeline/pipeline.module'
 
 @Module({
     imports: [
@@ -86,6 +87,7 @@ import { SoraModule } from './sora/sora.module'
         KlingModule,
         CaptionsModule,
         SoraModule,
+        PipelineModule,
         // GroupModule
     ],
     controllers: [],

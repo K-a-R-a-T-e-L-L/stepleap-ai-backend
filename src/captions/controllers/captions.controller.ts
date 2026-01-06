@@ -17,12 +17,17 @@ export class CaptionsController {
         return this.captionsService.createVideo(createVideoDto.imageReference, createVideoDto.audioReference)
     }
 
-    @UserDockGetOne('/:videoId/status', UserAuthType.USER, CaptionsResponseDto)
+    @UserDockPost('captions', UserAuthType.NOT_AUTH)
+    async createVideoCaptions(@Body() createVideoDto: any) {
+        return this.captionsService.addCaptionToVideo({ videoUrl: createVideoDto.videoUrl })
+    }
+
+    @UserDockGetOne('/:videoId/status', UserAuthType.NOT_AUTH, CaptionsResponseDto)
     async checkVideoStatus(@Param('videoId') videoId: string) {
         return this.captionsService.checkVideoStatus(videoId)
     }
 
-    @UserDockGetOne(':videoId/download', UserAuthType.USER, File)
+    @UserDockGetOne(':videoId/download', UserAuthType.NOT_AUTH, File)
     async downloadVideo(@Param('videoId') videoId: string) {
         return this.captionsService.downloadVideo(videoId)
     }

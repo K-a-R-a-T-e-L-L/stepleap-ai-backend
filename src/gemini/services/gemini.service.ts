@@ -72,10 +72,11 @@ export class GeminiService {
 
     async generateVideo(prompt: string) {
         let operation = await this.geminiClient.models.generateVideos({
-            model: 'veo-3.1-generate-preview',
+            model: 'veo-3.1-fast-generate-preview',
             prompt: prompt,
             config: {
                 durationSeconds: 4,
+                aspectRatio: '9:16',
             },
         })
 

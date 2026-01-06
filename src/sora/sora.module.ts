@@ -8,5 +8,6 @@ import { JwtModule } from '@nestjs/jwt'
     imports: [FileModule, JwtModule],
     controllers: [SoraController],
     providers: [SoraService],
+    exports: [SoraService],
 })
 export class SoraModule {}

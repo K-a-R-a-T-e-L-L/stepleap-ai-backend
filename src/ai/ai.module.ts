@@ -13,5 +13,6 @@ import { File } from '../file/entity/file.entity'
     imports: [TypeOrmModule.forFeature([Conversation, Message, File]), JwtModule, FileModule],
     controllers: [AiController],
     providers: [AiService, ConversationService],
+    exports: [AiService],
 })
 export class AiModule {}

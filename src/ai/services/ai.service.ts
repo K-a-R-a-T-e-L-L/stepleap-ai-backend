@@ -30,7 +30,11 @@ export class AiService {
         return new Observable((subscriber) => {
             ;(async () => {
                 try {
-                    const stream = await this.create(model, history)
+                    const stream = await this.client.responses.create({
+                        model: model,
+                        input: history,
+                        stream: true,
+                    })
 
                     for await (const event of stream) {
                         if (event.type === 'response.output_text.delta') {
@@ -72,7 +76,6 @@ export class AiService {
         return this.client.responses.create({
             model: model,
             input: input,
-            stream: true,
         })
     }
 }
