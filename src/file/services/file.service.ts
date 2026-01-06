@@ -95,6 +95,12 @@ export class FileService {
         }
     }
 
+    async uploadVideoFromUrl(url: string) {
+        const response = await fetch(url)
+        const buffer = Buffer.from(await response.arrayBuffer())
+        return this.createFileFromBuffer(buffer, `${uuidv4()}.mp4`, 'video/mp4')
+    }
+
     async uploadFile(
         file: string | Buffer,
         filename: string = null,
