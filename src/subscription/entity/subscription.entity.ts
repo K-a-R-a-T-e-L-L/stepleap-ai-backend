@@ -37,8 +37,10 @@ export class Subscription extends BaseEntity {
     yookassaPaymentId: string
 
     @Column({ name: 'next_pay_at', type: 'timestamp' })
+    @ApiProperty()
     nextPayAt: Date
 
     @Column({ name: 'start_at', type: 'timestamp' })
+    @ApiProperty()
     startAt: Date
 }

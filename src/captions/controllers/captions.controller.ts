@@ -4,7 +4,7 @@ import { UserDockGetOne, UserDockPost } from '@common/swagger/user.swagger.helpe
 import { UserAuthType } from '@common/decorators/auth.helpers'
 import { File } from '../../file/entity/file.entity'
 import { CaptionsService } from '../services/captions.service'
-import { CreateVideoDto } from '../dto/create-video.dto'
+import { CreateCaptionsVideoDto } from '../dto/create-captions-video.dto'
 import { CaptionsResponseDto } from '../dto/captions-response.dto'
 
 @ApiTags('Captions')
@@ -12,9 +12,9 @@ import { CaptionsResponseDto } from '../dto/captions-response.dto'
 export class CaptionsController {
     constructor(private readonly captionsService: CaptionsService) {}
 
-    @UserDockPost('', UserAuthType.USER, CreateVideoDto, CaptionsResponseDto)
-    async createVideo(@Body() createVideoDto: any) {
-        return this.captionsService.createVideo(createVideoDto.imageReference, createVideoDto.audioReference)
+    @UserDockPost('', UserAuthType.USER, CreateCaptionsVideoDto, CaptionsResponseDto)
+    async createVideo(@Body() createCaptionsVideo: any) {
+        return this.captionsService.createVideo(createCaptionsVideo.imageReference, createCaptionsVideo.audioReference)
     }
 
     @UserDockPost('captions', UserAuthType.NOT_AUTH)
