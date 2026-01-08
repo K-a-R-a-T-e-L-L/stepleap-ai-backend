@@ -18,6 +18,7 @@ export class CaptionsService {
         const imageFile = await (await fetch(imageReference)).blob()
         const audioFile = await (await fetch(audioReference)).blob()
 
+        const FormData = require('form-data')
         const formData = new FormData()
         formData.append('model', 'mirage-video-1-latest')
         formData.append('image_reference', imageFile)
