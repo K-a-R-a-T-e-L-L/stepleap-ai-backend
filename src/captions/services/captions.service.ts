@@ -23,16 +23,15 @@ export class CaptionsService {
         formData.append('image_reference', imageFile)
         formData.append('audio_reference', audioFile)
 
-        const response = await fetch('https://api.mirage.app/v1/videos', {
+        const response = await axios.post('https://api.mirage.app/v1/videos', formData, {
             method: 'POST',
             headers: {
                 'x-api-key': this.configService.get('MIRAGE_SECRET_KEY'),
                 ...formData.getHeaders(),
             },
-            body: formData as any,
         })
 
-        const data = await response.json()
+        const data = await response.data
 
         if (data.error) {
             throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, data.error.message)
