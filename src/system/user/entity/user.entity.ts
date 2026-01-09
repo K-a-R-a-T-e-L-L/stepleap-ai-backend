@@ -6,7 +6,8 @@ import { Subscription } from '../../../subscription/entity/subscription.entity'
 import { Survey } from '../../../survey/entity/survey.entity'
 import { Group } from '../../../group/entity/group.entity'
 import { UsageStatistics } from '../../../ai/entities/usage-statistics.entity'
-import { Conversation } from '../../../ai/entities/conversation.entity' // type-only import avoids runtime cycle
+import { Conversation } from '../../../conversation/entities/conversation.entity'
+import { Pipeline } from 'src/pipeline/entities/pipeline.entity'
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -49,4 +50,7 @@ export class User extends BaseEntity {
 
     @OneToMany(() => Conversation, (conversation) => conversation.user)
     conversations: Conversation[]
+
+    @OneToMany(() => Pipeline, (pipeline) => pipeline.user)
+    pipelines: Pipeline[]
 }

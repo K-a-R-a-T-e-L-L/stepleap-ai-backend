@@ -14,14 +14,10 @@ import { PaymentModule } from './payment/payment.module'
 import { SubscriptionModule } from './subscription/subscription.module'
 import { YookassaModule } from 'nestjs-yookassa'
 import { SurveyModule } from './survey/survey.module'
-import { AfishaModule } from './afisha/afisha.module'
-import { WebinarModule } from './webinar/webinar.module'
 import { ChatModule } from './chat/chat.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { TelegramLoggerModule } from './logger/logger.module'
 import { NotificationModule } from './notification/notification.module'
-import { RandomCoffeeModule } from './random-coffee/random-coffee.module'
-// import { GroupModule } from './group/group.module';
 import { AiModule } from './ai/ai.module'
 import { GeminiModule } from './gemini/gemini.module'
 import { ElevenlabsModule } from './elevenlabs/elevenlabs.module'
@@ -29,6 +25,7 @@ import { KlingModule } from './kling/kling.module'
 import { CaptionsModule } from './captions/captions.module'
 import { SoraModule } from './sora/sora.module'
 import { PipelineModule } from './pipeline/pipeline.module'
+import { ConversationModule } from './conversation/conversation.module'
 
 @Module({
     imports: [
@@ -77,10 +74,7 @@ import { PipelineModule } from './pipeline/pipeline.module'
         PaymentModule,
         SubscriptionModule,
         SurveyModule,
-        AfishaModule,
-        WebinarModule,
         ChatModule,
-        RandomCoffeeModule,
         AiModule,
         GeminiModule,
         ElevenlabsModule,
@@ -88,7 +82,7 @@ import { PipelineModule } from './pipeline/pipeline.module'
         CaptionsModule,
         SoraModule,
         PipelineModule,
-        // GroupModule
+        ConversationModule,
     ],
     controllers: [],
     providers: [],

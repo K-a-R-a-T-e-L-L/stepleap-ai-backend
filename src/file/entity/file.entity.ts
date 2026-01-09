@@ -3,22 +3,12 @@ import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm'
 
 import { BaseEntity } from '@common/database/base/base.entity'
 import { TypesEnum } from '../enum/types.enum'
-import { Message } from '../../ai/entities/message.entity'
 
 @Entity('files')
 export class File extends BaseEntity {
     @ApiProperty()
     @Column({ type: 'enum', default: TypesEnum.FILE, enum: TypesEnum })
     type: TypesEnum
-
-    @ApiProperty({ type: () => Message })
-    @JoinColumn({ name: 'message_id' })
-    @ManyToOne(() => Message, (message) => message.files)
-    message: Message
-
-    @ApiProperty()
-    @Column({ name: 'message_id', nullable: true })
-    messageId: string
 
     @ApiProperty()
     @Column({ name: 'original_url' })
