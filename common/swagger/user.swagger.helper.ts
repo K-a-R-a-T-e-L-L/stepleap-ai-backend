@@ -36,12 +36,9 @@ export function UserDockGetManyNotPaginate<T>(
         ApiOkResponse({
             description: 'Успешный ответ',
             schema: {
-                type: 'object',
-                properties: {
-                    data: {
-                        type: 'array',
-                        items: { $ref: getSchemaPath(model) },
-                    },
+                type: 'array',
+                items: {
+                    $ref: getSchemaPath(model),
                 },
             },
         }),
