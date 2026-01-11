@@ -9,6 +9,7 @@ import { UserDecorator } from 'src/system/user/decorators/user.decorator'
 import { User } from 'src/system/user/entity/user.entity'
 import { ErrorDto } from '@common/errors/error.dto'
 import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
+import { PipelineStep } from '../entities/pipeline-step.entity'
 
 @Controller('pipelines')
 export class PipelineController {
@@ -24,7 +25,7 @@ export class PipelineController {
         return this.pipelineService.createPipeline(user)
     }
 
-    @UserDockPost(':pipelineId/steps', UserAuthType.USER, CreateStepDto, Pipeline)
+    @UserDockPost(':pipelineId/steps', UserAuthType.USER, CreateStepDto, PipelineStep)
     async createStep(
         @UserDecorator() user: User,
         @Param('pipelineId') pipelineId: string,
