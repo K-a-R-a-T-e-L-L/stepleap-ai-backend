@@ -87,7 +87,12 @@ export class PipelineService {
                         )
                 }
 
-                pipelineStep.output = await pipelineAiProvider.generateText(pipelineStep.input, pipelineStep.config)
+                try {
+                    pipelineStep.output = await pipelineAiProvider.generateText(pipelineStep.input, pipelineStep.config)
+                } catch (error) {
+                    console.error(error)
+                    pipelineStep.error = error.message
+                }
             } else if (pipelineStep.type === PipelineStepType.VIDEO) {
                 let pipelineAiProvider: AiVideoProvider
 
@@ -113,6 +118,7 @@ export class PipelineService {
                         pipelineStep.config,
                     )
                 } catch (e: any) {
+                    console.error(e)
                     pipelineStep.error = e.message
                     break
                 }
