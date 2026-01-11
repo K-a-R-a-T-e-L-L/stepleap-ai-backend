@@ -29,7 +29,7 @@ export class ConversationsController {
         return this.conversationService.getUserConversations(user)
     }
 
-    @UserDockPost(':conversationId', UserAuthType.USER, SendMessageDto, CreateConversationResponseDto)
+    @UserDockPost(':conversationId', UserAuthType.USER, SendMessageDto, Message)
     async sendUserMessageToConversation(
         @UserDecorator() user: User,
         @Body() sendMessageDto: SendMessageDto,

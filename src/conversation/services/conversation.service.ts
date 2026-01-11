@@ -51,7 +51,11 @@ export class ConversationService {
         return conversation.messages
     }
 
-    async sendUserMessageToConversation(user: User, userMessage: SendMessageDto, conversationId: string) {
+    async sendUserMessageToConversation(
+        user: User,
+        userMessage: SendMessageDto,
+        conversationId: string,
+    ): Promise<Message> {
         const conversation = await this.conversationRepository.findOne({
             where: {
                 id: conversationId,
