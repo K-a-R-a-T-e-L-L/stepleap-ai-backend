@@ -8,9 +8,17 @@ import { SoraModule } from 'src/sora/sora.module'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Pipeline } from './entities/pipeline.entity'
 import { JwtModule } from '@nestjs/jwt'
+import { PipelineStep } from './entities/pipeline-step.entity'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Pipeline]), JwtModule, GeminiModule, AiModule, CaptionsModule, SoraModule],
+    imports: [
+        TypeOrmModule.forFeature([Pipeline, PipelineStep]),
+        JwtModule,
+        GeminiModule,
+        AiModule,
+        CaptionsModule,
+        SoraModule,
+    ],
     controllers: [PipelineController],
     providers: [PipelineService],
 })

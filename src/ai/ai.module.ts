@@ -11,11 +11,13 @@ import { File } from '../file/entity/file.entity'
 import { ChatGPTService } from './ai-providers/chatgpt/chatgpt.service'
 import { GeminiService } from './ai-providers/gemini/gemini.service'
 import { KlingService } from './ai-providers/kling/kling.service'
+import { AiProvidersService } from './ai-providers/ai-providers.service'
+import { VeoService } from './ai-providers/gemini/veo.service'
 
 @Module({
     imports: [TypeOrmModule.forFeature([File]), JwtModule, FileModule],
     controllers: [],
-    providers: [ChatGPTService, GeminiService, KlingService],
-    exports: [ChatGPTService, GeminiService, KlingService],
+    providers: [ChatGPTService, GeminiService, KlingService, AiProvidersService, VeoService],
+    exports: [ChatGPTService, GeminiService, KlingService, AiProvidersService, VeoService],
 })
 export class AiModule {}

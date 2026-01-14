@@ -1,10 +1,15 @@
 import { TypeValidate, Validate, ValidateEnum } from '@common/decorators/validation.helpers'
 import { AiProviderEnum } from '../enums/ai-provider.enum'
 import { PipelineStepType } from '../enums/pipeline-step-type.enum'
+import { PipelineStepInput } from '../entities/pipeline-step.entity'
+import { ValidateNested } from 'class-validator'
+import { Type } from 'class-transformer'
 
 export class CreateStepDto {
-    @Validate(TypeValidate.STRING)
-    input: string
+    @ValidateNested({ each: true })
+    @Type(() => PipelineStepInput)
+    @Validate(TypeValidate.ARRAY)
+    input: PipelineStepInput[]
 
     @ValidateEnum(PipelineStepType, { enum: PipelineStepType })
     type: PipelineStepType

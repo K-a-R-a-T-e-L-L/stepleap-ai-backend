@@ -5,6 +5,7 @@ import { AiTextProvider } from 'src/ai/interfaces/ai-text-provider.interface'
 import { AiVideoProvider } from 'src/ai/interfaces/ai-video-provider.interface'
 import { File } from 'src/file/entity/file.entity'
 import { FileService } from 'src/file/services/file.service'
+import { PipelineStepInput } from 'src/pipeline/entities/pipeline-step.entity'
 import { ProxyAgent } from 'undici'
 import { v4 } from 'uuid'
 
@@ -70,6 +71,8 @@ export class ChatGPTService implements AiTextProvider<ChatGPTConfig>, AiVideoPro
 
         return this.fileService.createFileFromBuffer(buffer, `${v4()}.mp4`, 'video/mp4')
     }
+
+    async generateOutput(input: PipelineStepInput[], config: any) {}
 
     private validateConfig(config: any): ChatGPTConfig {
         if (!this.isChatGPTConfig(config)) {

@@ -8,6 +8,7 @@ import { ProxyAgent, fetch as undiciFetch } from 'undici'
 import { AiTextProvider } from 'src/ai/interfaces/ai-text-provider.interface'
 import { AiVideoProvider } from 'src/ai/interfaces/ai-video-provider.interface'
 import { File } from 'src/file/entity/file.entity'
+import { PipelineStepInput } from 'src/pipeline/entities/pipeline-step.entity'
 
 @Injectable()
 export class GeminiService implements AiTextProvider, AiVideoProvider {
@@ -109,5 +110,42 @@ export class GeminiService implements AiTextProvider, AiVideoProvider {
         })
 
         return file
+    }
+
+    async generateOutput(inputs: PipelineStepInput[], config: any): Promise<PipelineStepInput[]> {
+        const geminiInputs = []
+
+        if (!config.model) {
+            config.model = 'gemini-3-flash-preview'
+        }
+
+        for (const plInputObj of inputs) {
+            if (plInputObj.type === 'TEXT') {
+                geminiInputs.push({
+                    type: 'text',
+                    text: plInputObj.content,
+                })
+            }
+
+            // TODO: Video and image understanding
+            // if (plInputObj.type === 'FILE') {
+            //     geminiInputs.push({
+            //         type:
+            //     })
+            // }
+        }
+
+        const response = await this.geminiClient.models.generateContent({
+            model: config.model,
+            contents: geminiInputs,
+            config: config,
+        })
+
+        return [
+            {
+                type: 'TEXT',
+                content: response.text,
+            },
+        ]
     }
 }
