@@ -74,6 +74,7 @@ export class PipelineService {
             } catch (error) {
                 console.error(error)
                 pipelineStep.error = error.message
+                await pipelineStep.save()
                 break
             }
 
@@ -94,7 +95,9 @@ export class PipelineService {
     }
 
     async deletePipeline(pipelineId: string) {
-        return this.pipelineRepository.delete(pipelineId)
+        const pipeline = await this.pipelineRepository.findOne({ where: { id: pipelineId } })
+
+        return await this.pipelineRepository.remove(pipeline)
     }
 
     async updatePipeline(pipelineId: string, updatePipelineDto: UpdatePipelineDto) {

@@ -34,7 +34,9 @@ export interface PipelineStepOutput {
 
 @Entity()
 export class PipelineStep extends BaseEntity {
-    @ManyToOne(() => Pipeline, (pipeline) => pipeline.steps)
+    @ManyToOne(() => Pipeline, (pipeline) => pipeline.steps, {
+        onDelete: 'CASCADE',
+    })
     pipeline: Pipeline
 
     @ApiPropertyOptional({ default: '' })

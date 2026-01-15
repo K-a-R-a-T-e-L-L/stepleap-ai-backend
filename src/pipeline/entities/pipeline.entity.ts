@@ -11,7 +11,11 @@ export class Pipeline extends BaseEntity {
     name?: string
 
     @ApiProperty({ type: () => [PipelineStep] })
-    @OneToMany(() => PipelineStep, (pipelineStep) => pipelineStep.pipeline, { eager: true, cascade: true })
+    @OneToMany(() => PipelineStep, (pipelineStep) => pipelineStep.pipeline, {
+        eager: true,
+        cascade: true,
+        orphanedRowAction: 'delete',
+    })
     steps: PipelineStep[]
 
     @ManyToOne(() => User, (user) => user.pipelines)
