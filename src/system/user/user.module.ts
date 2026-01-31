@@ -10,13 +10,14 @@ import { UserAdminController } from './controllers/user.admin.controller'
 import { SubscriptionModule } from '../../subscription/subscription.module'
 import { PlanModule } from '../../plan/plan.module'
 import { PaymentModule } from '../../payment/payment.module'
-import { SurveyModule } from '../../survey/survey.module'
+import { UserGuard } from './guards/user.guard'
+import { RoleGuard } from './guards/role.guard'
 
 @Global()
 @Module({
-    imports: [TypeOrmModule.forFeature([User]), JwtModule, SubscriptionModule, PlanModule, PaymentModule, SurveyModule],
-    providers: [UserService, ConfigModule],
+    imports: [TypeOrmModule.forFeature([User]), JwtModule, SubscriptionModule, PlanModule, PaymentModule],
+    providers: [UserService, ConfigModule, UserGuard, RoleGuard],
     controllers: [UserController, UserAdminController],
-    exports: [UserService],
+    exports: [UserService, JwtModule],
 })
 export class UserModule {}

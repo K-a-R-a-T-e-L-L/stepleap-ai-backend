@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { TelegrafModule } from 'nestjs-telegraf'
-
 import { buildDataSourceOptions } from './database.provider'
 import { validationSchema } from './env.validation'
 import { UserModule } from './system/user/user.module'
@@ -13,19 +12,14 @@ import { PlanModule } from './plan/plan.module'
 import { PaymentModule } from './payment/payment.module'
 import { SubscriptionModule } from './subscription/subscription.module'
 import { YookassaModule } from 'nestjs-yookassa'
-import { SurveyModule } from './survey/survey.module'
-import { ChatModule } from './chat/chat.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { TelegramLoggerModule } from './logger/logger.module'
 import { NotificationModule } from './notification/notification.module'
-import { AiModule } from './ai/ai.module'
-import { GeminiModule } from './gemini/gemini.module'
-import { ElevenlabsModule } from './elevenlabs/elevenlabs.module'
-import { KlingModule } from './kling/kling.module'
-import { CaptionsModule } from './captions/captions.module'
-import { SoraModule } from './sora/sora.module'
-import { PipelineModule } from './pipeline/pipeline.module'
-import { ConversationModule } from './conversation/conversation.module'
+import { AutomationTemplateModule } from './automation-template/automation-template.module'
+import { UserAutomationModule } from './user-automation/user-automation.module'
+import { AutomationRunLogModule } from './automation-run-log/automation-run-log.module'
+import { N8nModule } from './n8n/n8n.module'
+import { BillingModule } from './billing/billing.module'
 
 @Module({
     imports: [
@@ -73,16 +67,11 @@ import { ConversationModule } from './conversation/conversation.module'
         PlanModule,
         PaymentModule,
         SubscriptionModule,
-        SurveyModule,
-        ChatModule,
-        AiModule,
-        GeminiModule,
-        ElevenlabsModule,
-        KlingModule,
-        CaptionsModule,
-        SoraModule,
-        PipelineModule,
-        ConversationModule,
+        AutomationTemplateModule,
+        UserAutomationModule,
+        AutomationRunLogModule,
+        N8nModule,
+        BillingModule,
     ],
     controllers: [],
     providers: [],

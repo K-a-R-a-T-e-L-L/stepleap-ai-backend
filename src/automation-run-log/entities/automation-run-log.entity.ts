@@ -1,0 +1,37 @@
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+
+import { BaseEntity } from '@common/database/base/base.entity'
+import { UserAutomation } from '../../user-automation/entities/user-automation.entity'
+
+@Entity('automation_run_log')
+export class AutomationRunLog extends BaseEntity {
+    @ApiHideProperty()
+    @ManyToOne(() => UserAutomation, (userAutomation) => userAutomation.runLogs, { eager: true })
+    @JoinColumn({ name: 'user_automation_id' })
+    userAutomation: UserAutomation
+
+    @ApiProperty()
+    @Column({ name: 'user_automation_id', type: 'uuid' })
+    userAutomationId: string
+
+    @ApiProperty()
+    @Column()
+    status: string
+
+    @ApiProperty({ required: false })
+    @Column({ name: 'error_message', type: 'text', nullable: true })
+    errorMessage?: string
+
+    @ApiProperty()
+    @Column({ name: 'start_time', type: 'timestamptz', default: () => 'NOW()' })
+    startTime: Date
+
+    @ApiProperty({ required: false })
+    @Column({ name: 'end_time', type: 'timestamptz', nullable: true })
+    endTime?: Date
+
+    @ApiProperty({ required: false })
+    @Column({ name: 'n8n_execution_id', nullable: true })
+    n8nExecutionId?: string
+}

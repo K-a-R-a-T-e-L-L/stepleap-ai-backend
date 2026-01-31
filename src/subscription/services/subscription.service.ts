@@ -12,7 +12,6 @@ import { EventEmitter2, OnEvent } from '@nestjs/event-emitter'
 import { User } from '../../system/user/entity/user.entity'
 import { ActionsEnum } from '../enum/actions.enum'
 import { NotificationService } from '../../notification/notification.service'
-import { ChatService } from '../../chat/services/chat.service'
 import { ErrorDto } from '@common/errors/error.dto'
 import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
 
@@ -23,7 +22,6 @@ export class SubscriptionService extends BaseService<Subscription, CreateSubscri
         @Inject(forwardRef(() => PaymentService)) private readonly paymentService: PaymentService,
         private readonly eventEmitter: EventEmitter2,
         private readonly notificationService: NotificationService,
-        private readonly chatService: ChatService,
     ) {
         super(subscriptionRepository)
     }
@@ -77,8 +75,6 @@ export class SubscriptionService extends BaseService<Subscription, CreateSubscri
             subscription.startAt = new Date()
             subscription.nextPayAt = new Date()
             subscription.nextPayAt.setDate(subscription.startAt.getDate() + subscription.plan.period)
-
-            this.chatService.inviteUserToAllChats(subscription.user)
         } else {
             subscription.nextPayAt.setDate(subscription.nextPayAt.getDate() + subscription.plan.period)
         }
@@ -115,11 +111,6 @@ export class SubscriptionService extends BaseService<Subscription, CreateSubscri
             yookassaPaymentId: '',
             status: StatusesEnum.PENDING,
         })
-    }
-
-    @OnEvent('subscription.stop')
-    async kickUserFromAllChats(payload: any) {
-        await this.chatService.kickUserFromAllChats(payload.subscription.user)
     }
 
     async find() {

@@ -11,7 +11,6 @@ import { Subscription } from '../../subscription/entity/subscription.entity'
 import { InjectBot } from 'nestjs-telegraf'
 import { Telegraf } from 'telegraf'
 import { ConfigService } from '@nestjs/config'
-import { ChatService } from '../../chat/services/chat.service'
 
 @Injectable()
 export class PaymentService extends BaseService<Payment, CreatePaymentDto, UpdatePaymentDto> {
@@ -20,7 +19,6 @@ export class PaymentService extends BaseService<Payment, CreatePaymentDto, Updat
         @InjectRepository(Payment) private readonly paymentRepository: Repository<Payment>,
         private readonly yookassaService: YookassaService,
         @Inject(forwardRef(() => SubscriptionService)) private readonly subscriptionService: SubscriptionService,
-        private readonly chatService: ChatService,
         @InjectBot() private readonly bot: Telegraf,
     ) {
         super(paymentRepository)

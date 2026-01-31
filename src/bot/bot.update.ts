@@ -5,7 +5,6 @@ import { UserService } from '../system/user/services/user.service'
 import { InjectS3, S3 } from 'nestjs-s3'
 import { FileService } from '../file/services/file.service'
 import { OnModuleInit } from '@nestjs/common'
-import { ChatService } from '../chat/services/chat.service'
 import { Telegraf } from 'telegraf'
 import { ConfigService } from '@nestjs/config'
 import { Markup } from 'telegraf'
@@ -13,11 +12,10 @@ import { TelegramLoggerService } from '../logger/logger.service'
 import { StartCommand } from './commands/start.command'
 
 @Update()
-export class BotUpdate implements OnModuleInit {
+export class BotUpdate  {
     constructor(
         private readonly userService: UserService,
         private readonly fileService: FileService,
-        private readonly chatService: ChatService,
         private readonly configService: ConfigService,
         private readonly logger: TelegramLoggerService,
         @InjectS3() private readonly s3: S3,
@@ -25,18 +23,6 @@ export class BotUpdate implements OnModuleInit {
         private readonly startCommand: StartCommand,
     ) {
         this.logger.setContext(BotUpdate.name)
-    }
-
-    async onModuleInit() {
-        const chats = await this.chatService.find()
-
-        for (let chat of chats) {
-            try {
-                await this.bot.telegram.getChat(chat.tg_id)
-            } catch (e) {
-                this.logger.error(e)
-            }
-        }
     }
 
     @Start()

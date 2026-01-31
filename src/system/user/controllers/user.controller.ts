@@ -24,7 +24,7 @@ export class UserController {
         response.cookie('refresh_token', refreshToken, {
             path: '/',
             httpOnly: true,
-            sameSite: 'strict' as 'strict',
+            sameSite: 'strict',
             secure: process.env.NODE_ENV === 'production',
             maxAge: 1000 * 60 * 60 * 24 * 30,
         })

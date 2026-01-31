@@ -1,13 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger'
 import { Column, Entity, ManyToMany, OneToMany, OneToOne } from 'typeorm'
 import { BaseEntity } from '@common/database/base/base.entity'
 import { RolesEnum } from '../enum/roles.enum'
 import { Subscription } from '../../../subscription/entity/subscription.entity'
-import { Survey } from '../../../survey/entity/survey.entity'
-import { Group } from '../../../group/entity/group.entity'
-import { UsageStatistics } from '../../../ai/entities/usage-statistics.entity'
-import { Conversation } from '../../../conversation/entities/conversation.entity'
-import { Pipeline } from 'src/pipeline/entities/pipeline.entity'
+import { UserAutomation } from '../../../user-automation/entities/user-automation.entity'
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -42,15 +38,7 @@ export class User extends BaseEntity {
     @OneToOne(() => Subscription, (subscription) => subscription.user)
     subscription: Subscription
 
-    @OneToOne(() => Survey, (survey) => survey.user)
-    survey: Survey
-
-    @OneToMany(() => UsageStatistics, (usageStatistics) => usageStatistics.user)
-    usageStatistics: UsageStatistics
-
-    @OneToMany(() => Conversation, (conversation) => conversation.user)
-    conversations: Conversation[]
-
-    @OneToMany(() => Pipeline, (pipeline) => pipeline.user)
-    pipelines: Pipeline[]
+    @ApiHideProperty()
+    @OneToMany(() => UserAutomation, (userAutomation) => userAutomation.user)
+    userAutomations: UserAutomation[]
 }
