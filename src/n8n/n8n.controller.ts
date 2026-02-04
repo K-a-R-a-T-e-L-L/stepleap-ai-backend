@@ -44,7 +44,7 @@ export class N8nController {
             const outputText = dto.outputUrl ? `\nРезультат: ${dto.outputUrl}` : ''
 
             await this.notificationService.notify(
-                5460431051, //ПОТОМ ЗАМЕНИТЬ НА РИЛ ID
+                telegramId,
                 `Завершена автоматизация.\nСтатус: ${statusText}${errorText}${outputText}`,
             )
         }
