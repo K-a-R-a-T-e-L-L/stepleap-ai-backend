@@ -46,7 +46,7 @@ export class BotUpdate  {
         await ctx.reply('Links', {
             parse_mode: 'MarkdownV2',
             ...Markup.inlineKeyboard([
-                Markup.button.webApp('Открыть прод', 'https://bclub.alexlnos.com'),
+                Markup.button.webApp('Открыть прод', 'https://ai.alexlnos.com'),
                 Markup.button.webApp('Открыть дев', 'https://localhost.ru:3000'),
             ]),
         })
