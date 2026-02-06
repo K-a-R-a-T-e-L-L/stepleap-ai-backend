@@ -1,5 +1,11 @@
 import { Module, DynamicModule, Global } from '@nestjs/common';
+import { ModuleMetadata } from '@nestjs/common/interfaces';
 import { TelegramLoggerService, TelegramLoggerConfig } from './logger.service';
+
+export interface TelegramLoggerAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
+    inject?: any[];
+    useFactory: (...args: any[]) => TelegramLoggerConfig | Promise<TelegramLoggerConfig>;
+}
 
 @Global()
 @Module({})
@@ -17,6 +23,26 @@ export class TelegramLoggerModule {
 
         return {
             module: TelegramLoggerModule,
+            providers: [configProvider, loggerProvider],
+            exports: [TelegramLoggerService],
+        };
+    }
+
+    static forRootAsync(options: TelegramLoggerAsyncOptions): DynamicModule {
+        const configProvider = {
+            provide: 'TELEGRAM_LOGGER_CONFIG',
+            useFactory: options.useFactory,
+            inject: options.inject ?? [],
+        };
+
+        const loggerProvider = {
+            provide: TelegramLoggerService,
+            useClass: TelegramLoggerService,
+        };
+
+        return {
+            module: TelegramLoggerModule,
+            imports: options.imports ?? [],
             providers: [configProvider, loggerProvider],
             exports: [TelegramLoggerService],
         };
