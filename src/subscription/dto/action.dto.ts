@@ -4,4 +4,7 @@ import {ActionsEnum} from "../enum/actions.enum";
 export class ActionDto {
     @Validate(TypeValidate.STRING)
     action: ActionsEnum
+
+    @Validate(TypeValidate.UUID, { required: false })
+    planId?: string
 }

@@ -7,9 +7,10 @@ import { SubscriptionUserController } from './controllers/subscription.user.cont
 import { JwtModule } from '@nestjs/jwt'
 import { SubscriptionController } from './controllers/subscription.controller'
 import { AdminSubscriptionController } from './controllers/admin.subscription.controller'
+import { Plan } from '../plan/entity/plan.entity'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Subscription]), PaymentModule, JwtModule],
+    imports: [TypeOrmModule.forFeature([Subscription, Plan]), PaymentModule, JwtModule],
     controllers: [SubscriptionUserController, SubscriptionController, AdminSubscriptionController],
     providers: [SubscriptionService],
     exports: [SubscriptionService]

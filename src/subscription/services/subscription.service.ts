@@ -3,6 +3,7 @@ import { BaseService } from '@common/database/base/base.service'
 import { InjectRepository } from '@nestjs/typeorm'
 import { IsNull, LessThanOrEqual, Not, Repository } from 'typeorm'
 import { Subscription } from '../entity/subscription.entity'
+import { Plan } from '../../plan/entity/plan.entity'
 import { CreateSubscriptionDto } from '../dto/create-subscription.dto'
 import { UpdateSubscriptionDto } from '../dto/update-subscription.dto'
 import { StatusesEnum } from '../enum/statuses.enum'
@@ -19,6 +20,7 @@ import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
 export class SubscriptionService extends BaseService<Subscription, CreateSubscriptionDto, UpdateSubscriptionDto> {
     constructor(
         @InjectRepository(Subscription) private readonly subscriptionRepository: Repository<Subscription>,
+        @InjectRepository(Plan) private readonly planRepository: Repository<Plan>,
         @Inject(forwardRef(() => PaymentService)) private readonly paymentService: PaymentService,
         private readonly eventEmitter: EventEmitter2,
         private readonly notificationService: NotificationService,
@@ -82,30 +84,78 @@ export class SubscriptionService extends BaseService<Subscription, CreateSubscri
         return subscription.save()
     }
 
-    async performAction(user: User, action: ActionsEnum) {
+    async performAction(user: User, action: ActionsEnum, planId?: string) {
         if (action === ActionsEnum.PAYMENT_CREATE) {
-            const subscription = await this.subscriptionRepository.findOneBy({ userId: user.id })
+            const subscription = await this.subscriptionRepository.findOne({
+                where: { userId: user.id },
+                relations: { plan: true },
+            })
 
-            return this.paymentService.createPayment(subscription)
+            if (!subscription) {
+                throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND, 'Subscription not found')
+            }
+
+            return this.paymentService.createPayment(subscription, planId)
         } else if (action === ActionsEnum.SUBSCRIPTION_STOP) {
             return this.stopSubscription(user.id)
         }
     }
 
-    async create(user: User, planId: string) {
-        const subscription = await this.subscriptionRepository.findOneBy({
-            userId: user.id,
+    async applyPaidPlan(subscriptionId: string, planId: string, yooKassaPaymentId?: string) {
+        const subscription = await this.getOne({
+            where: { id: subscriptionId },
+            relations: { user: true },
         })
 
-        console.log(subscription)
+        const plan = await this.planRepository.findOne({ where: { id: planId } })
+        if (!plan) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND, 'Plan not found')
+        }
 
-        if (subscription) {
+        subscription.planId = plan.id
+        subscription.plan = plan as any
+        subscription.status = StatusesEnum.ACTIVE
+        subscription.yookassaPaymentId = yooKassaPaymentId ?? subscription.yookassaPaymentId
+
+        const now = new Date()
+        subscription.startAt = now
+        subscription.nextPayAt = new Date(now)
+        subscription.nextPayAt.setDate(subscription.nextPayAt.getDate() + plan.period)
+
+        return this.subscriptionRepository.save(subscription)
+    }
+
+    async create(user: User, planId: string) {
+        const plan = await this.planRepository.findOne({ where: { id: planId } })
+        if (!plan) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND, 'Plan not found')
+        }
+
+        const subscription = await this.subscriptionRepository.findOne({
+            where: { userId: user.id },
+            withDeleted: true,
+        })
+
+        if (subscription && !subscription.deletedAt) {
             throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, 'Subscription already exists')
+        }
+
+        if (subscription?.deletedAt) {
+            await this.subscriptionRepository.restore(subscription.id)
+            const restored = await this.subscriptionRepository.findOneOrFail({
+                where: { id: subscription.id },
+            })
+            restored.planId = planId
+            restored.startAt = new Date()
+            restored.nextPayAt = new Date()
+            restored.yookassaPaymentId = ''
+            restored.status = StatusesEnum.PENDING
+            return this.subscriptionRepository.save(restored)
         }
 
         return this.subscriptionRepository.save({
             userId: user.id,
-            planId: planId,
+            planId,
             startAt: new Date(),
             nextPayAt: new Date(),
             yookassaPaymentId: '',

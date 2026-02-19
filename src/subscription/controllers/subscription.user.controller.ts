@@ -38,6 +38,6 @@ export class SubscriptionUserController {
 
     @UserDockPost('action', UserAuthType.USER, ActionDto, null, 'Выполнить действие с подпиской пользователя')
     async subscriptionAction(@UserDecorator() user: User, @Body() actionDto: ActionDto) {
-        return this.subscriptionService.performAction(user, actionDto.action)
+        return this.subscriptionService.performAction(user, actionDto.action, actionDto.planId)
     }
 }

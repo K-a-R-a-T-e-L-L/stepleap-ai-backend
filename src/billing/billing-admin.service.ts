@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { ErrorDto } from '@common/errors/error.dto'
+import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
 
 import { Meter } from './entities/meter.entity'
 import { PlanLimit } from './entities/plan-limit.entity'
@@ -25,6 +27,15 @@ export class BillingAdminService {
         return this.meterRepository.save(entity)
     }
 
+    async removeMeter(id: string) {
+        const entity = await this.meterRepository.findOne({ where: { id } })
+        if (!entity) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND)
+        }
+        await this.meterRepository.softDelete(id)
+        return this.meterRepository.findOne({ where: { id }, withDeleted: true })
+    }
+
     listPlanLimits(planId?: string) {
         return this.planLimitRepository.find({
             where: planId ? { planId } : undefined,
@@ -35,6 +46,15 @@ export class BillingAdminService {
     createPlanLimit(dto: Partial<PlanLimit>) {
         const entity = this.planLimitRepository.create(dto)
         return this.planLimitRepository.save(entity)
+    }
+
+    async removePlanLimit(id: string) {
+        const entity = await this.planLimitRepository.findOne({ where: { id } })
+        if (!entity) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND)
+        }
+        await this.planLimitRepository.softDelete(id)
+        return this.planLimitRepository.findOne({ where: { id }, withDeleted: true })
     }
 
     listUsageEvents(runLogId?: string) {

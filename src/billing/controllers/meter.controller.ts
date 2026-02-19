@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 
 import { UserAuth, UserAuthType } from '@common/decorators/auth.helpers'
@@ -24,5 +24,13 @@ export class MeterController {
     @ApiResponse({ status: 201, type: Meter })
     create(@Body() dto: Partial<Meter>) {
         return this.billingAdminService.createMeter(dto)
+    }
+
+    @Delete(':id')
+    @UserAuth(UserAuthType.ADMIN)
+    @ApiOperation({ summary: 'Delete meter by id' })
+    @ApiResponse({ status: 200, type: Meter })
+    remove(@Param('id') id: string) {
+        return this.billingAdminService.removeMeter(id)
     }
 }

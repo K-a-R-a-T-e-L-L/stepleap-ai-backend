@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Param, Post } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { UserAuth, UserAuthType } from '@common/decorators/auth.helpers'
@@ -15,5 +15,12 @@ export class AdminPlanController {
     @ApiOperation({ summary: 'Create plan' })
     async post(@Body() createPlanDto: CreatePlanDto) {
         return this.planService.save(createPlanDto)
+    }
+
+    @Delete(':id')
+    @UserAuth(UserAuthType.ADMIN)
+    @ApiOperation({ summary: 'Delete plan by id' })
+    async remove(@Param('id') id: string) {
+        return this.planService.remove(id)
     }
 }
