@@ -3,7 +3,6 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 import { BaseEntity } from '@common/database/base/base.entity'
 import { User } from '../../system/user/entity/user.entity'
-import { PaymentProvider } from './payment-provider.entity'
 import { Subscription } from '../../subscription/entity/subscription.entity'
 
 @Entity('payments')
@@ -21,10 +20,7 @@ export class Payment extends BaseEntity {
     @Column()
     status: string
 
-    @ApiProperty()
-    @ManyToOne(() => PaymentProvider)
-    @JoinColumn({ name: 'provider_id' })
-    provider: PaymentProvider
+    // provider removed (single provider)
 
     @ApiProperty()
     @Column({ name: 'payment_pay_id' })

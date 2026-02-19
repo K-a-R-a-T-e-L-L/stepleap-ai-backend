@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsDateString, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from 'class-validator'
+import { IsDateString, IsEnum, IsNotEmpty, IsObject, IsOptional, IsUUID } from 'class-validator'
+import { TriggerTypeEnum } from '../enum/trigger-type.enum'
 
 export class CreateUserAutomationDto {
     @ApiProperty()
@@ -7,10 +8,10 @@ export class CreateUserAutomationDto {
     @IsNotEmpty()
     templateId: string
 
-    @ApiProperty()
-    @IsString()
+    @ApiProperty({ enum: TriggerTypeEnum })
+    @IsEnum(TriggerTypeEnum)
     @IsNotEmpty()
-    triggerType: string
+    triggerType: TriggerTypeEnum
 
     @ApiProperty({ type: [String], required: false })
     @IsDateString({}, { each: true })

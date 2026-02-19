@@ -3,6 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 import { BaseEntity } from '@common/database/base/base.entity'
 import { UserAutomation } from '../../user-automation/entities/user-automation.entity'
+import { RunLogStatusEnum } from '../enum/run-log-status.enum'
 
 @Entity('automation_run_log')
 export class AutomationRunLog extends BaseEntity {
@@ -16,8 +17,8 @@ export class AutomationRunLog extends BaseEntity {
     userAutomationId: string
 
     @ApiProperty()
-    @Column()
-    status: string
+    @Column({ type: 'enum', enum: RunLogStatusEnum, default: RunLogStatusEnum.PENDING })
+    status: RunLogStatusEnum
 
     @ApiProperty({ required: false })
     @Column({ name: 'error_message', type: 'text', nullable: true })

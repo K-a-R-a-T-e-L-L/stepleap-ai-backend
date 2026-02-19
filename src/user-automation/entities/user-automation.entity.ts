@@ -5,6 +5,7 @@ import { BaseEntity } from '@common/database/base/base.entity'
 import { User } from '../../system/user/entity/user.entity'
 import { AutomationTemplate } from '../../automation-template/entities/automation-template.entity'
 import { AutomationRunLog } from '../../automation-run-log/entities/automation-run-log.entity'
+import { TriggerTypeEnum } from '../enum/trigger-type.enum'
 
 @Entity('user_automation')
 export class UserAutomation extends BaseEntity {
@@ -27,8 +28,8 @@ export class UserAutomation extends BaseEntity {
     templateId: string
 
     @ApiProperty()
-    @Column({ name: 'trigger_type' })
-    triggerType: string
+    @Column({ name: 'trigger_type', type: 'enum', enum: TriggerTypeEnum })
+    triggerType: TriggerTypeEnum
 
     @ApiProperty({ type: [String], required: false })
     @Column({ name: 'time_start', type: 'timestamptz', array: true, nullable: true })

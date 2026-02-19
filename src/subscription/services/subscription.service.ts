@@ -116,4 +116,26 @@ export class SubscriptionService extends BaseService<Subscription, CreateSubscri
     async find() {
         return this.subscriptionRepository.find()
     }
+
+    async activateSubscription(subscriptionId: string) {
+        const subscription = await this.getOne({
+            where: { id: subscriptionId },
+            relations: { plan: true, user: true },
+        })
+
+        subscription.status = StatusesEnum.ACTIVE
+        subscription.yookassaPaymentId = subscription.yookassaPaymentId ?? ''
+
+        if (!subscription.startAt) {
+            subscription.startAt = new Date()
+        }
+
+        if (!subscription.nextPayAt) {
+            subscription.nextPayAt = new Date()
+        }
+
+        subscription.nextPayAt.setDate(subscription.startAt.getDate() + subscription.plan.period)
+
+        return subscription.save()
+    }
 }

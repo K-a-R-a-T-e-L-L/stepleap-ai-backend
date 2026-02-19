@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator'
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator'
+import { RunLogStatusEnum } from '../enum/run-log-status.enum'
 
 export class CreateAutomationRunLogDto {
     @ApiProperty()
@@ -7,10 +8,10 @@ export class CreateAutomationRunLogDto {
     @IsNotEmpty()
     userAutomationId: string
 
-    @ApiProperty()
-    @IsString()
+    @ApiProperty({ enum: RunLogStatusEnum })
+    @IsEnum(RunLogStatusEnum)
     @IsNotEmpty()
-    status: string
+    status: RunLogStatusEnum
 
     @ApiProperty({ required: false })
     @IsString()

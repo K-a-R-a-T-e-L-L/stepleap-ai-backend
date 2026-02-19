@@ -10,6 +10,7 @@ import { UpdateUserAutomationDto } from './dto/update-user-automation.dto'
 import { AutomationRunLogService } from '../automation-run-log/automation-run-log.service'
 import { N8nService } from '../n8n/n8n.service'
 import { RunAutomationDto } from './dto/run-automation.dto'
+import { RunLogStatusEnum } from '../automation-run-log/enum/run-log-status.enum'
 import { BillingService } from '../billing/billing.service'
 
 @Injectable()
@@ -77,7 +78,7 @@ export class UserAutomationService {
 
         const runLog = await this.automationRunLogService.create({
             userAutomationId: automation.id,
-            status: 'pending',
+            status: RunLogStatusEnum.PENDING,
         })
 
         const payload = {

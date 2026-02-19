@@ -28,9 +28,8 @@ export class UserGuard implements CanActivate {
             throw new ErrorDto(ErrorCodeEnum.AUTH_FAIL, e.message)
         }
 
-        const decodedUser = this.jwtService.decode(token)
-
-        request.user = decodedUser.user;
+        const user = await this.userService.getUserFromToken(token, false)
+        request.user = user
 
         return true
     }

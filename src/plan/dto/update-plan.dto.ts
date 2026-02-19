@@ -9,19 +9,5 @@ export class UpdatePlanDto {
 
     @Validate(TypeValidate.NUMBER)
     amount: number
-
-    @Validate(TypeValidate.NUMBER)
-    tokens: number
-
-    @Validate(TypeValidate.BOOLEAN)
-    is_view_webinars: boolean
-
-    @Validate(TypeValidate.BOOLEAN)
-    is_view_affiche: boolean
-
-    @Validate(TypeValidate.BOOLEAN)
-    is_view_chats: boolean
-
-    @Validate(TypeValidate.BOOLEAN)
-    is_random_coffee: boolean
+    // limits are defined in plan_limit
 }

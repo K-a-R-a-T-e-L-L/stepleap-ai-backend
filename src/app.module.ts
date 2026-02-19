@@ -20,6 +20,7 @@ import { UserAutomationModule } from './user-automation/user-automation.module'
 import { AutomationRunLogModule } from './automation-run-log/automation-run-log.module'
 import { N8nModule } from './n8n/n8n.module'
 import { BillingModule } from './billing/billing.module'
+import { AutomationResultModule } from './automation-result/automation-result.module'
 
 @Module({
     imports: [
@@ -58,6 +59,11 @@ import { BillingModule } from './billing/billing.module'
         }),
         TelegramLoggerModule.forRoot({
             chatId: process.env.TELEGRAM_ADMINCHAT_ID,
+            logLevels: ['error'],
+            telegramMaxPerMinute: 20,
+            dedupeWindowMs: 30_000,
+            telegramBatchSize: 5,
+            telegramFlushMs: 2_000,
         }),
         NotificationModule,
         EventEmitterModule.forRoot(),
@@ -72,6 +78,7 @@ import { BillingModule } from './billing/billing.module'
         AutomationRunLogModule,
         N8nModule,
         BillingModule,
+        AutomationResultModule,
     ],
     controllers: [],
     providers: [],

@@ -9,19 +9,5 @@ export class CreatePlanDto {
 
     @Validate(TypeValidate.NUMBER)
     amount: number
-
-    @Validate(TypeValidate.NUMBER)
-    tokens: number
-
-    @Validate(TypeValidate.BOOLEAN)
-    isViewWebinars: boolean
-
-    @Validate(TypeValidate.BOOLEAN)
-    isViewAffiche: boolean
-
-    @Validate(TypeValidate.BOOLEAN)
-    isViewChats: boolean
-
-    @Validate(TypeValidate.BOOLEAN)
-    isRandomCoffee: boolean
+    // limits are defined in plan_limit
 }

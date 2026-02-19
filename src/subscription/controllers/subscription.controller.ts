@@ -6,15 +6,15 @@ import {SubscriptionService} from "../services/subscription.service";
 import {UserService} from "../../system/user/services/user.service";
 import {Subscription} from "../entity/subscription.entity";
 
-@Controller('subscriptions')
-@ApiTags('Subscriptions')
+@Controller('admin/subscriptions')
+@ApiTags('Admin subscriptions')
 export class SubscriptionController {
     constructor(
         private readonly subscriptionService: SubscriptionService,
         private readonly userService: UserService
     ) {}
 
-    @UserDockGetManyNotPaginate('', UserAuthType.NOT_AUTH, Subscription)
+    @UserDockGetManyNotPaginate('', UserAuthType.ADMIN, Subscription)
     async get() {
         return this.subscriptionService.find()
     }

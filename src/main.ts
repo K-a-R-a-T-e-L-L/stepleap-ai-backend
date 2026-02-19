@@ -5,6 +5,9 @@ import { useContainer } from 'class-validator'
 import { config } from 'dotenv'
 
 import { AppModule } from './app.module'
+import { TelegramLoggerService } from './logger/logger.service'
+import { HttpLoggingInterceptor } from './logger/http-logging.interceptor'
+import { AllExceptionsFilter } from './logger/all-exceptions.filter'
 import * as cookieParser from "cookie-parser";
 
 async function bootstrap() {
@@ -19,6 +22,8 @@ async function bootstrap() {
         })
     )
     app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
+    app.useGlobalInterceptors(new HttpLoggingInterceptor(app.get(TelegramLoggerService)))
+    app.useGlobalFilters(new AllExceptionsFilter(app.get(TelegramLoggerService)))
     useContainer(app.select(AppModule), { fallbackOnErrors: true })
     app.use(cookieParser())
 

@@ -16,23 +16,5 @@ export class Plan extends BaseEntity {
     @Column()
     amount: number
 
-    @ApiProperty()
-    @Column({ default: 10000 })
-    tokens: number
-
-    @ApiProperty()
-    @Column({ name: 'is_view_webinars' })
-    isViewWebinars: boolean
-
-    @ApiProperty()
-    @Column({ name: 'is_view_affiche' })
-    isViewAffiche: boolean
-
-    @ApiProperty()
-    @Column({ name: 'is_view_chats' })
-    isViewChats: boolean
-
-    @ApiProperty()
-    @Column({ name: 'is_random_coffee' })
-    isRandomCoffee: boolean
+    // limits are handled via plan_limit + meters
 }

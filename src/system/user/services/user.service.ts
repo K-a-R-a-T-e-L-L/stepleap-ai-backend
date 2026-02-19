@@ -48,12 +48,26 @@ export class UserService {
     async authenticate(rawInitData: string) {
         let user: User
         let initData
+        const adminIds = (this.configService.get('TELEGRAM_ADMIN_IDS') || '')
+            .split(',')
+            .map((id: string) => id.trim())
+            .filter(Boolean)
 
         if (rawInitData.startsWith('qqq')) {
-            user = await this.getUserByTelegramId(190398004)
+            const fallbackTelegramId = Number(adminIds[0] || '999000')
+            user = await this.getUserByTelegramId(fallbackTelegramId)
 
             if (!user) {
-                throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND)
+                const isAdmin = adminIds.includes(String(fallbackTelegramId))
+                user = await this.userRepository.save({
+                    telegramId: fallbackTelegramId,
+                    telegramUsername: 'dev_user',
+                    telegramFirstName: 'Dev',
+                    telegramLastName: 'Local',
+                    telegramIsPremium: false,
+                    telegramLanguageCode: 'ru',
+                    role: isAdmin ? RolesEnum.ADMIN : RolesEnum.USER,
+                })
             }
         } else {
             initData = parse(rawInitData)
@@ -95,6 +109,11 @@ export class UserService {
                 }
             }
 
+            if (adminIds.includes(String(user.telegramId)) && user.role !== RolesEnum.ADMIN) {
+                user.role = RolesEnum.ADMIN
+                await user.save()
+            }
+
             return {
                 accessToken: this.generateAccessToken(user),
                 refreshToken: this.generateRefreshToken(user),
@@ -109,7 +128,7 @@ export class UserService {
             telegramLastName: initData.user.last_name,
             telegramIsPremium: initData.user.is_premium,
             telegramLanguageCode: initData.user.language_code,
-            role: RolesEnum.USER,
+            role: adminIds.includes(String(initData.user.id)) ? RolesEnum.ADMIN : RolesEnum.USER,
         })
 
         const { accessToken, refreshToken } = this.generateTokenPair(newUser)

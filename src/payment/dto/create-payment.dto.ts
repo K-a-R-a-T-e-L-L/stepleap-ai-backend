@@ -11,9 +11,6 @@ export class CreatePaymentDto {
     status: string
 
     @Validate(TypeValidate.STRING)
-    providerId: string
-
-    @Validate(TypeValidate.STRING)
     paymentPayId: string
 
     @Validate(TypeValidate.STRING)

@@ -15,5 +15,15 @@ export const validationSchema = Joi.object({
     JWT_REFRESH_EXPIRES: Joi.string()
         .pattern(/^\d+[smhdwy]$/)
         .required(),
-    FRONTEND_URL: Joi.string().required()
+    TELEGRAM_TOKEN: Joi.string().required(),
+    TELEGRAM_ADMINCHAT_ID: Joi.string().required(),
+    TELEGRAM_ADMIN_IDS: Joi.string().required(),
+    YOOKASSA_SHOP_ID: Joi.string().required(),
+    YOOKASSA_SECRET_KEY: Joi.string().required(),
+    S3_ACCESS_KEY_ID: Joi.string().required(),
+    S3_SECRET_ACCESS_KEY: Joi.string().required(),
+    S3_URL: Joi.string().required(),
+    FRONTEND_URL: Joi.string().required(),
+    ENV: Joi.string().valid('dev', 'production').required(),
+    NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
 })
