@@ -3,7 +3,7 @@ import { Command, Ctx, InjectBot, Start, Update } from 'nestjs-telegraf'
 import { TelegrafContext } from '@common/interfaces/context.interface'
 import { UserService } from '../system/user/services/user.service'
 import { OnModuleInit } from '@nestjs/common'
-import { Telegraf } from 'telegraf'
+import { Markup, Telegraf } from 'telegraf'
 import { TelegramLoggerService } from '../logger/logger.service'
 import { StartCommand } from './commands/start.command'
 
@@ -34,5 +34,16 @@ export class BotUpdate implements OnModuleInit {
         } else {
             await ctx.reply('Пользователь не найден')
         }
+    }
+
+    @Command('links')
+    async links(@Ctx() ctx: TelegrafContext) {
+        await ctx.reply('Links', {
+            parse_mode: 'MarkdownV2',
+            ...Markup.inlineKeyboard([
+                Markup.button.webApp('Открыть прод', 'https://ai.alexlnos.com'),
+                Markup.button.webApp('Открыть дев', 'https://localhost.ru:3000'),
+            ]),
+        })
     }
 }

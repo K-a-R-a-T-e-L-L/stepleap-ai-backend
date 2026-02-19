@@ -33,37 +33,48 @@ import { AutomationResultModule } from './automation-result/automation-result.mo
             inject: [ConfigService],
             useFactory: buildDataSourceOptions,
         }),
-        TelegrafModule.forRoot({
-            token: process.env.TELEGRAM_TOKEN,
-            options: {
-                telegram: {
-                    testEnv: process.env.ENV === 'dev',
+        TelegrafModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                token: configService.get('TELEGRAM_TOKEN'),
+                options: {
+                    telegram: {
+                        testEnv: false,
+                    },
                 },
-            },
-            include: [BotModule],
+                include: [BotModule],
+            }),
         }),
-        YookassaModule.forRoot({
-            shopId: process.env.YOOKASSA_SHOP_ID,
-            apiKey: process.env.YOOKASSA_SECRET_KEY,
+        YookassaModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                shopId: configService.get('YOOKASSA_SHOP_ID'),
+                apiKey: configService.get('YOOKASSA_SECRET_KEY'),
+            }),
         }),
-        S3Module.forRoot({
-            config: {
-                credentials: {
-                    accessKeyId: process.env.S3_ACCESS_KEY_ID,
-                    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+        S3Module.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                config: {
+                    credentials: {
+                        accessKeyId: configService.get('S3_ACCESS_KEY_ID'),
+                        secretAccessKey: configService.get('S3_SECRET_ACCESS_KEY'),
+                    },
+                    region: 'default',
+                    endpoint: configService.get('S3_URL'),
+                    forcePathStyle: true,
                 },
-                region: 'default',
-                endpoint: process.env.S3_URL,
-                forcePathStyle: true,
-            },
+            }),
         }),
-        TelegramLoggerModule.forRoot({
-            chatId: process.env.TELEGRAM_ADMINCHAT_ID,
-            logLevels: ['error'],
-            telegramMaxPerMinute: 20,
-            dedupeWindowMs: 30_000,
-            telegramBatchSize: 5,
-            telegramFlushMs: 2_000,
+        TelegramLoggerModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                chatId: configService.get('TELEGRAM_ADMINCHAT_ID'),
+            }),
         }),
         NotificationModule,
         EventEmitterModule.forRoot(),
