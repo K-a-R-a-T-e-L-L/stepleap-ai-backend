@@ -23,6 +23,34 @@ export class BillingAdminService {
     }
 
     createMeter(dto: Partial<Meter>) {
+        const code = dto.code?.trim()
+        if (!code) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, 'Meter code is required')
+        }
+
+        return this.createOrRestoreMeter({ ...dto, code })
+    }
+
+    private async createOrRestoreMeter(dto: Partial<Meter>) {
+        const existing = await this.meterRepository.findOne({
+            where: { code: dto.code },
+            withDeleted: true,
+        })
+
+        if (existing && !existing.deletedAt) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, `Meter already exists: ${dto.code}`)
+        }
+
+        if (existing?.deletedAt) {
+            await this.meterRepository.restore(existing.id)
+            const restored = await this.meterRepository.findOneOrFail({ where: { id: existing.id } })
+            restored.name = dto.name ?? restored.name
+            restored.unit = dto.unit ?? restored.unit
+            restored.description = dto.description ?? restored.description
+            restored.isActive = dto.isActive ?? restored.isActive
+            return this.meterRepository.save(restored)
+        }
+
         const entity = this.meterRepository.create(dto)
         return this.meterRepository.save(entity)
     }
