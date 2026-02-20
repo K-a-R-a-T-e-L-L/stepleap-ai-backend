@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { UserAutomationService } from './user-automation.service'
@@ -9,7 +9,7 @@ import { N8nModule } from '../n8n/n8n.module'
 import { BillingModule } from '../billing/billing.module'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([UserAutomation]), AutomationRunLogModule, N8nModule, BillingModule],
+    imports: [TypeOrmModule.forFeature([UserAutomation]), AutomationRunLogModule, forwardRef(() => N8nModule), BillingModule],
     controllers: [UserAutomationController],
     providers: [UserAutomationService],
     exports: [UserAutomationService],

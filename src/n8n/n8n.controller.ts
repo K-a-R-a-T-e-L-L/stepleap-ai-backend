@@ -7,6 +7,7 @@ import { BillingService } from '../billing/billing.service'
 import { AutomationResultService } from '../automation-result/automation-result.service'
 import { RunLogStatusEnum } from '../automation-run-log/enum/run-log-status.enum'
 import { N8nCallbackDto } from './dto/n8n-callback.dto'
+import { UserAutomationService } from '../user-automation/user-automation.service'
 
 @Controller('n8n')
 @ApiTags('n8n')
@@ -16,12 +17,18 @@ export class N8nController {
         private readonly notificationService: NotificationService,
         private readonly billingService: BillingService,
         private readonly automationResultService: AutomationResultService,
+        private readonly userAutomationService: UserAutomationService,
     ) {}
 
     @Post('callback')
     @ApiOperation({ summary: 'Receive n8n execution callback' })
     @ApiResponse({ status: 200, description: 'Callback received' })
     async callback(@Body() dto: N8nCallbackDto) {
+        const existingRunLog = await this.automationRunLogService.findOne(dto.runLogId)
+        if (existingRunLog.status !== RunLogStatusEnum.PENDING) {
+            return { ok: true, ignored: true }
+        }
+
         const runLog = await this.automationRunLogService.update(dto.runLogId, {
             status: dto.status as RunLogStatusEnum,
             errorMessage: dto.errorMessage,
@@ -29,6 +36,11 @@ export class N8nController {
         })
 
         const userId = runLog.userAutomation?.userId
+        const userAutomationId = runLog.userAutomationId
+
+        if (dto.status === RunLogStatusEnum.ERROR && userId && userAutomationId) {
+            this.userAutomationService.scheduleAutoRetry(userId, userAutomationId, 'n8n-callback')
+        }
 
         if (dto.usageLineItems?.length && userId) {
             await this.billingService.recordUsage(

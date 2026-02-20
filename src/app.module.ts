@@ -38,6 +38,10 @@ import { AutomationResultModule } from './automation-result/automation-result.mo
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
                 token: configService.get('TELEGRAM_TOKEN'),
+                launchOptions:
+                    configService.get<string>('TELEGRAM_BOT_LAUNCH') === 'false'
+                        ? false
+                        : { dropPendingUpdates: true },
                 options: {
                     telegram: {
                         testEnv: false,

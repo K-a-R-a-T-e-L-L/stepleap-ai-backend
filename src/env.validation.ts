@@ -15,6 +15,7 @@ export const validationSchema = Joi.object({
         .pattern(/^\d+[smhdwy]$/)
         .required(),
     TELEGRAM_TOKEN: Joi.string().required(),
+    TELEGRAM_BOT_LAUNCH: Joi.string().valid('true', 'false').default('true'),
     TELEGRAM_ADMINCHAT_ID: Joi.string().required(),
     TELEGRAM_ADMIN_IDS: Joi.string().required(),
     YOOKASSA_SHOP_ID: Joi.string().required(),
@@ -22,7 +23,13 @@ export const validationSchema = Joi.object({
     S3_ACCESS_KEY_ID: Joi.string().required(),
     S3_SECRET_ACCESS_KEY: Joi.string().required(),
     S3_URL: Joi.string().required(),
+    S3_BUCKET: Joi.string().required(),
     FRONTEND_URL: Joi.string().required(),
+    AUTOMATION_RETRY_ENABLED: Joi.string().valid('true', 'false').default('true'),
+    AUTOMATION_RETRY_DELAY_MS: Joi.number().integer().min(1000).default(30000),
+    AUTOMATION_RETRY_COOLDOWN_MS: Joi.number().integer().min(1000).default(300000),
+    AUTOMATION_PENDING_TIMEOUT_MS: Joi.number().integer().min(10000).default(900000),
+    AUTOMATION_PENDING_CHECK_INTERVAL_MS: Joi.number().integer().min(5000).default(60000),
     ENV: Joi.string().valid('dev', 'production').required(),
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
 })

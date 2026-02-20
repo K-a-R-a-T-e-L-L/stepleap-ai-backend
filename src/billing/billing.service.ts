@@ -60,6 +60,14 @@ export class BillingService {
 
     async ensureBalances(subscription: Subscription) {
         const now = new Date()
+        const planLimits = await this.planLimitRepository.find({
+            where: { planId: subscription.planId },
+        })
+
+        if (planLimits.length === 0) {
+            return []
+        }
+
         const existing = await this.subscriptionBalanceRepository.find({
             where: {
                 subscriptionId: subscription.id,
@@ -71,15 +79,27 @@ export class BillingService {
         )
 
         if (inPeriod.length > 0) {
-            return inPeriod
-        }
+            const existingMeterIds = new Set(inPeriod.map((b) => b.meterId))
+            const missingLimits = planLimits.filter((limit) => !existingMeterIds.has(limit.meterId))
 
-        const planLimits = await this.planLimitRepository.find({
-            where: { planId: subscription.planId },
-        })
+            if (missingLimits.length === 0) {
+                return inPeriod
+            }
 
-        if (planLimits.length === 0) {
-            return []
+            const periodStart = inPeriod[0].periodStart
+            const periodEnd = inPeriod[0].periodEnd
+            const createdMissing = await this.subscriptionBalanceRepository.save(
+                missingLimits.map((limit) => ({
+                    subscriptionId: subscription.id,
+                    meterId: limit.meterId,
+                    usedUnits: 0,
+                    includedUnits: limit.includedUnits,
+                    periodStart,
+                    periodEnd,
+                })),
+            )
+
+            return [...inPeriod, ...createdMissing]
         }
 
         const { periodStart, periodEnd } = this.buildPeriod(subscription.plan)

@@ -16,13 +16,13 @@ export class FileService {
         @InjectRepository(File) private readonly fileRepository: Repository<File>,
     ) {}
 
-    async upload(file: Express.Multer.File) {
+    async upload(file: Express.Multer.File, tag = 'manual-upload') {
         const mimeType = file.mimetype
 
         const newFile = new File()
 
         if (['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) {
-            const { originalUrl, originalUrlPng } = await this.uploadImage(file.buffer)
+            const { originalUrl, originalUrlPng } = await this.uploadImage(file.buffer, null, tag)
             newFile.originalUrl = originalUrl
             newFile.originalUrlPng = originalUrlPng
 
@@ -32,7 +32,7 @@ export class FileService {
                 [120, 360, 840, 1080, 1320].map(async (targetWidth) => {
                     return {
                         key: `image${targetWidth}Url`,
-                        url: await this.uploadImage(await this.resizeImage(file.buffer, targetWidth)),
+                        url: await this.uploadImage(await this.resizeImage(file.buffer, targetWidth), null, tag),
                     }
                 }),
             )
@@ -43,23 +43,24 @@ export class FileService {
 
             return newFile.save()
         } else {
-            newFile.originalUrl = await this.uploadFile(file.buffer, file.originalname, file.mimetype)
+            newFile.originalUrl = await this.uploadFile(file.buffer, file.originalname, file.mimetype, tag)
             newFile.type = TypesEnum.FILE
 
             return newFile.save()
         }
     }
 
-    async createFileFromBuffer(buf: Buffer, filename: string, mimeType: string) {
+    async createFileFromBuffer(buf: Buffer, filename: string, mimeType: string, tag = 'internal') {
         const newFile = new File()
 
-        newFile.originalUrl = await this.uploadFile(buf, filename, mimeType)
+        newFile.originalUrl = await this.uploadFile(buf, filename, mimeType, tag)
 
         return newFile.save()
     }
 
-    // { image: string | Buffer, filename: string = null, s3Bucket: string = 'bclub-test' }
-    async uploadImage(image: string | Buffer, filename: string = null, s3Bucket: string = 'bclub-test') {
+    async uploadImage(image: string | Buffer, filename: string = null, tag = 'images') {
+        const s3Bucket = this.getBucketName()
+        const normalizedTag = this.normalizeTag(tag)
         let buffer = image
 
         if (typeof image === 'string') {
@@ -75,7 +76,7 @@ export class FileService {
 
         await this.s3.putObject({
             Bucket: s3Bucket,
-            Key: keyWebp,
+            Key: `${normalizedTag}/${keyWebp}`,
             Body: fileWebp,
             ContentType: 'image/webp',
             ACL: 'public-read',
@@ -83,48 +84,42 @@ export class FileService {
 
         await this.s3.putObject({
             Bucket: s3Bucket,
-            Key: keyPng,
+            Key: `${normalizedTag}/${keyPng}`,
             Body: filePng,
             ContentType: 'image/png',
             ACL: 'public-read',
         })
 
         return {
-            originalUrl: `${this.configService.get('S3_URL')}/${s3Bucket}/${keyWebp}`,
-            originalUrlPng: `${this.configService.get('S3_URL')}/${s3Bucket}/${keyPng}`,
+            originalUrl: `${this.configService.get('S3_URL')}/${s3Bucket}/${normalizedTag}/${keyWebp}`,
+            originalUrlPng: `${this.configService.get('S3_URL')}/${s3Bucket}/${normalizedTag}/${keyPng}`,
         }
     }
 
-    async uploadVideoFromUrl(url: string) {
+    async uploadVideoFromUrl(url: string, tag = 'video-url') {
         const response = await fetch(url)
         const buffer = Buffer.from(await response.arrayBuffer())
-        return this.createFileFromBuffer(buffer, `${uuidv4()}.mp4`, 'video/mp4')
+        return this.createFileFromBuffer(buffer, `${uuidv4()}.mp4`, 'video/mp4', tag)
     }
 
-    async uploadFile(
-        file: string | Buffer,
-        filename: string = null,
-        mimeType: string = null,
-        s3Bucket: string = 'bclub-test',
-    ) {
+    async uploadFile(file: string | Buffer, filename: string = null, mimeType: string = null, tag = 'files') {
+        const s3Bucket = this.getBucketName()
+        const normalizedTag = this.normalizeTag(tag)
         let key = uuidv4()
-
-        console.log(filename, filename.slice(filename.lastIndexOf('.') + 1))
 
         if (filename?.lastIndexOf('.') !== -1) {
             key = `${key}.${filename.slice(filename.lastIndexOf('.') + 1)}`
-            console.log(key)
         }
 
         await this.s3.putObject({
             Bucket: s3Bucket,
-            Key: key,
+            Key: `${normalizedTag}/${key}`,
             Body: file,
             ContentType: mimeType,
             ACL: 'public-read',
         })
 
-        return `${this.configService.get('S3_URL')}/${s3Bucket}/${key}`
+        return `${this.configService.get('S3_URL')}/${s3Bucket}/${normalizedTag}/${key}`
     }
 
     async create(file: Partial<File>) {
@@ -140,12 +135,24 @@ export class FileService {
             id: In(fileIds),
         })
 
-        console.log(foundFiles)
-
         return foundFiles
     }
 
     async findAllFiles() {
         return this.fileRepository.find()
+    }
+
+    private getBucketName() {
+        const explicitBucket = this.configService.get<string>('S3_BUCKET')
+        if (explicitBucket) {
+            return explicitBucket
+        }
+        throw new Error('S3_BUCKET is not configured')
+    }
+
+    private normalizeTag(tag?: string) {
+        const value = (tag || 'files').trim().toLowerCase()
+        const sanitized = value.replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-')
+        return sanitized || 'files'
     }
 }

@@ -96,12 +96,14 @@ export class TelegramLoggerService implements LoggerService {
         const timestamp = new Date().toISOString()
         const header = `[${this.config.appName}] ${timestamp} [${logLevel.toUpperCase()}] [${context}]`
         const body = typeof message === 'object' ? JSON.stringify(message, null, 2) : String(message)
+        const coloredHeader = this.colorize(header, logLevel)
+        const coloredBody = this.colorize(body, logLevel)
 
         if (trace) {
-            return `${header}\n${body}\n\nStack Trace:\n${trace}`
+            return `${coloredHeader}\n${coloredBody}\n\n${this.colorize('Stack Trace:', 'error')}\n${trace}`
         }
 
-        return `${header}\n${body}`
+        return `${coloredHeader}\n${coloredBody}`
     }
 
     private escapeHtml(text: string): string {
@@ -223,5 +225,22 @@ export class TelegramLoggerService implements LoggerService {
         }
 
         return chunks
+    }
+
+    private colorize(text: string, logLevel: string) {
+        if (!process.stdout.isTTY || process.env.NO_COLOR) {
+            return text
+        }
+
+        const colors: Record<string, string> = {
+            log: '\x1b[32m', // green
+            warn: '\x1b[33m', // yellow
+            error: '\x1b[31m', // red
+            debug: '\x1b[36m', // cyan
+            verbose: '\x1b[90m', // gray
+        }
+        const reset = '\x1b[0m'
+        const color = colors[logLevel] ?? '\x1b[37m'
+        return `${color}${text}${reset}`
     }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UploadedFile, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Get, Post, UploadedFile, UseInterceptors } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { UserAuth, UserAuthType } from '@common/decorators/auth.helpers'
@@ -22,14 +22,18 @@ export class FilesController {
                     type: 'string',
                     format: 'binary',
                 },
+                tag: {
+                    type: 'string',
+                    example: 'sora',
+                },
             },
         },
     })
     @UserAuth(UserAuthType.NOT_AUTH)
     @ApiResponse({ status: 400, type: ErrorDto })
     @ApiResponse({ status: 200, type: File })
-    async uploadImage(@UploadedFile() file: Express.Multer.File) {
-        return this.fileService.upload(file)
+    async uploadImage(@UploadedFile() file: Express.Multer.File, @Body('tag') tag?: string) {
+        return this.fileService.upload(file, tag)
     }
 
     @Get('')

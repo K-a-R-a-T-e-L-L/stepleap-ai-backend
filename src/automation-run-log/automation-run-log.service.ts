@@ -7,6 +7,7 @@ import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
 import { AutomationRunLog } from './entities/automation-run-log.entity'
 import { CreateAutomationRunLogDto } from './dto/create-automation-run-log.dto'
 import { UpdateAutomationRunLogDto } from './dto/update-automation-run-log.dto'
+import { RunLogStatusEnum } from './enum/run-log-status.enum'
 
 @Injectable()
 export class AutomationRunLogService {
@@ -49,5 +50,21 @@ export class AutomationRunLogService {
         await this.automationRunLogRepository.softDelete(id)
 
         return { id }
+    }
+
+    async failPendingOlderThan(before: Date, errorMessage: string) {
+        const result = await this.automationRunLogRepository
+            .createQueryBuilder()
+            .update(AutomationRunLog)
+            .set({
+                status: RunLogStatusEnum.ERROR,
+                errorMessage,
+                endTime: () => 'NOW()',
+            })
+            .where('status = :status', { status: RunLogStatusEnum.PENDING })
+            .andWhere('start_time < :before', { before: before.toISOString() })
+            .execute()
+
+        return result.affected ?? 0
     }
 }

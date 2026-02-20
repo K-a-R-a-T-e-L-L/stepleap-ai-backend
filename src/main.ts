@@ -6,13 +6,16 @@ import { config } from 'dotenv'
 
 import { AppModule } from './app.module'
 import { TelegramLoggerService } from './logger/logger.service'
-import { HttpLoggingInterceptor } from './logger/http-logging.interceptor'
 import { AllExceptionsFilter } from './logger/all-exceptions.filter'
 import * as cookieParser from "cookie-parser";
 
 async function bootstrap() {
     config()
-    const app = await NestFactory.create(AppModule, { cors: { origin: '*' }, bodyParser: true })
+    const app = await NestFactory.create(AppModule, {
+        cors: { origin: '*' },
+        bodyParser: true,
+        logger: ['log', 'warn', 'error'],
+    })
     app.setGlobalPrefix('api')
     app.useGlobalPipes(
         new ValidationPipe({
@@ -22,7 +25,6 @@ async function bootstrap() {
         })
     )
     app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
-    app.useGlobalInterceptors(new HttpLoggingInterceptor(app.get(TelegramLoggerService)))
     app.useGlobalFilters(new AllExceptionsFilter(app.get(TelegramLoggerService)))
     useContainer(app.select(AppModule), { fallbackOnErrors: true })
     app.use(cookieParser())
@@ -36,7 +38,9 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, configSwagger)
     SwaggerModule.setup('api-docs', app, document)
 
-    await app.listen(3200)
+    const port = Number(process.env.PORT || 3200)
+    await app.listen(port)
+    app.get(TelegramLoggerService).warn(`Server started on port ${port}`, 'Bootstrap')
 }
 
 bootstrap()

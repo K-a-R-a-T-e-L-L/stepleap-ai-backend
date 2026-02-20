@@ -18,16 +18,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 ? exception.getResponse()
                 : { statusCode: status, message: 'Internal server error' }
 
-        this.logger.error(
-            {
-                status,
-                path: request.url,
-                method: request.method,
-                message,
-            },
-            exception instanceof Error ? exception.stack : undefined,
-            'Exception',
-        )
+        const payload = {
+            status,
+            path: request.url,
+            method: request.method,
+            message,
+        }
+        if (status >= 500) {
+            this.logger.error(payload, exception instanceof Error ? exception.stack : undefined, 'Exception')
+        } else {
+            this.logger.warn(payload, 'Exception')
+        }
 
         response.status(status).json(message)
     }

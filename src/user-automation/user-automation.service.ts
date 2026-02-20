@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { ConfigService } from '@nestjs/config'
 
 import { ErrorDto } from '@common/errors/error.dto'
 import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
@@ -14,14 +15,36 @@ import { RunLogStatusEnum } from '../automation-run-log/enum/run-log-status.enum
 import { BillingService } from '../billing/billing.service'
 
 @Injectable()
-export class UserAutomationService {
+export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
+    private readonly logger = new Logger(UserAutomationService.name)
+    private readonly retryLastByAutomation = new Map<string, number>()
+    private pendingMonitorTimer?: NodeJS.Timeout
+
     constructor(
         @InjectRepository(UserAutomation)
         private readonly userAutomationRepository: Repository<UserAutomation>,
         private readonly automationRunLogService: AutomationRunLogService,
         private readonly n8nService: N8nService,
         private readonly billingService: BillingService,
+        private readonly configService: ConfigService,
     ) {}
+
+    onModuleInit() {
+        const intervalMs =
+            Number(this.configService.get<string>('AUTOMATION_PENDING_CHECK_INTERVAL_MS', '60000')) || 60000
+
+        this.pendingMonitorTimer = setInterval(() => {
+            void this.failStalePendingRuns()
+        }, intervalMs)
+        this.pendingMonitorTimer.unref?.()
+    }
+
+    onModuleDestroy() {
+        if (this.pendingMonitorTimer) {
+            clearInterval(this.pendingMonitorTimer)
+            this.pendingMonitorTimer = undefined
+        }
+    }
 
     create(userId: string, dto: CreateUserAutomationDto) {
         const entity = this.userAutomationRepository.create({
@@ -90,7 +113,19 @@ export class UserAutomationService {
             },
         }
 
-        const n8nResult = await this.n8nService.executeWebhook(automation.template?.n8nId, payload)
+        let n8nResult: { executionId?: string | null } | undefined
+        try {
+            n8nResult = await this.n8nService.executeWebhook(automation.template?.n8nId, payload)
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Run dispatch failed'
+            await this.automationRunLogService.update(runLog.id, {
+                status: RunLogStatusEnum.ERROR,
+                errorMessage,
+                endTime: new Date().toISOString(),
+            })
+            this.scheduleAutoRetry(userId, automation.id, 'backend-dispatch')
+            throw error
+        }
 
         if (n8nResult?.executionId) {
             await this.automationRunLogService.update(runLog.id, {
@@ -99,5 +134,48 @@ export class UserAutomationService {
         }
 
         return runLog
+    }
+
+    scheduleAutoRetry(userId: string, automationId: string, source: 'backend-dispatch' | 'n8n-callback') {
+        const enabled = this.configService.get<string>('AUTOMATION_RETRY_ENABLED', 'true') !== 'false'
+        if (!enabled) {
+            return false
+        }
+
+        const delayMs = Number(this.configService.get<string>('AUTOMATION_RETRY_DELAY_MS', '30000')) || 30000
+        const cooldownMs =
+            Number(this.configService.get<string>('AUTOMATION_RETRY_COOLDOWN_MS', '300000')) || 300000
+        const now = Date.now()
+        const last = this.retryLastByAutomation.get(automationId) ?? 0
+
+        if (now - last < cooldownMs) {
+            return false
+        }
+
+        this.retryLastByAutomation.set(automationId, now)
+        setTimeout(async () => {
+            try {
+                await this.run(userId, automationId, { parameters: {} })
+                this.logger.log(`Auto-retry success for automation ${automationId} (${source})`)
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error)
+                this.logger.warn(`Auto-retry failed for automation ${automationId}: ${errorMessage}`)
+            }
+        }, delayMs)
+
+        return true
+    }
+
+    private async failStalePendingRuns() {
+        const timeoutMs = Number(this.configService.get<string>('AUTOMATION_PENDING_TIMEOUT_MS', '900000')) || 900000
+        const staleBefore = new Date(Date.now() - timeoutMs)
+        const affected = await this.automationRunLogService.failPendingOlderThan(
+            staleBefore,
+            `Execution timed out after ${Math.round(timeoutMs / 1000)}s`,
+        )
+
+        if (affected > 0) {
+            this.logger.warn(`Marked ${affected} stale pending run(s) as error`)
+        }
     }
 }
