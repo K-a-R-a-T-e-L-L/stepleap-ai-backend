@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { LessThan, Repository } from 'typeorm'
 
 import { ErrorDto } from '@common/errors/error.dto'
 import { ErrorCodeEnum } from '@common/enums/validator/error.code.enum'
@@ -66,5 +66,19 @@ export class AutomationRunLogService {
             .execute()
 
         return result.affected ?? 0
+    }
+
+    async findPendingOlderThan(before: Date) {
+        return this.automationRunLogRepository.find({
+            where: {
+                status: RunLogStatusEnum.PENDING,
+                startTime: LessThan(before),
+            },
+            relations: {
+                userAutomation: {
+                    user: true,
+                },
+            },
+        })
     }
 }

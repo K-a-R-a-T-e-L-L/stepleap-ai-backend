@@ -13,6 +13,7 @@ import { N8nService } from '../n8n/n8n.service'
 import { RunAutomationDto } from './dto/run-automation.dto'
 import { RunLogStatusEnum } from '../automation-run-log/enum/run-log-status.enum'
 import { BillingService } from '../billing/billing.service'
+import { NotificationService } from '../notification/notification.service'
 
 @Injectable()
 export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
@@ -27,6 +28,7 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
         private readonly n8nService: N8nService,
         private readonly billingService: BillingService,
         private readonly configService: ConfigService,
+        private readonly notificationService: NotificationService,
     ) {}
 
     onModuleInit() {
@@ -123,6 +125,21 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
                 errorMessage,
                 endTime: new Date().toISOString(),
             })
+
+            const telegramId = automation.user?.telegramId
+            if (telegramId) {
+                try {
+                    await this.notificationService.notify(
+                        telegramId,
+                        `Завершена автоматизация.\nСтатус: Ошибка\nОшибка: ${errorMessage}`,
+                    )
+                } catch (notifyError) {
+                    const notifyMessage =
+                        notifyError instanceof Error ? notifyError.message : String(notifyError)
+                    this.logger.warn(`Failed to send error notification: ${notifyMessage}`)
+                }
+            }
+
             this.scheduleAutoRetry(userId, automation.id, 'backend-dispatch')
             throw error
         }
@@ -169,13 +186,28 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
     private async failStalePendingRuns() {
         const timeoutMs = Number(this.configService.get<string>('AUTOMATION_PENDING_TIMEOUT_MS', '900000')) || 900000
         const staleBefore = new Date(Date.now() - timeoutMs)
-        const affected = await this.automationRunLogService.failPendingOlderThan(
-            staleBefore,
-            `Execution timed out after ${Math.round(timeoutMs / 1000)}s`,
-        )
-
-        if (affected > 0) {
-            this.logger.warn(`Marked ${affected} stale pending run(s) as error`)
+        const errorMessage = `Execution timed out after ${Math.round(timeoutMs / 1000)}s`
+        const staleRuns = await this.automationRunLogService.findPendingOlderThan(staleBefore)
+        if (!staleRuns.length) {
+            return
         }
+
+        for (const run of staleRuns) {
+            await this.automationRunLogService.update(run.id, {
+                status: RunLogStatusEnum.ERROR,
+                errorMessage,
+                endTime: new Date().toISOString(),
+            })
+
+            const telegramId = run.userAutomation?.user?.telegramId
+            if (telegramId) {
+                await this.notificationService.notify(
+                    telegramId,
+                    `Завершена автоматизация.\nСтатус: Ошибка\nОшибка: ${errorMessage}`,
+                )
+            }
+        }
+
+        this.logger.warn(`Marked ${staleRuns.length} stale pending run(s) as error`)
     }
 }
