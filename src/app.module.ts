@@ -21,6 +21,7 @@ import { AutomationRunLogModule } from './automation-run-log/automation-run-log.
 import { N8nModule } from './n8n/n8n.module'
 import { BillingModule } from './billing/billing.module'
 import { AutomationResultModule } from './automation-result/automation-result.module'
+import { AiChatModule } from './ai-chat/ai-chat.module'
 
 @Module({
     imports: [
@@ -94,6 +95,7 @@ import { AutomationResultModule } from './automation-result/automation-result.mo
         N8nModule,
         BillingModule,
         AutomationResultModule,
+        AiChatModule,
     ],
     controllers: [],
     providers: [],
