@@ -8,13 +8,13 @@ import { UsageLineItem } from './usage-line-item.entity'
 @Entity('usage_event')
 export class UsageEvent extends BaseEntity {
     @ApiHideProperty()
-    @ManyToOne(() => AutomationRunLog, { eager: true })
+    @ManyToOne(() => AutomationRunLog, { eager: true, nullable: true })
     @JoinColumn({ name: 'run_log_id' })
-    runLog: AutomationRunLog
+    runLog?: AutomationRunLog
 
-    @ApiProperty()
-    @Column({ name: 'run_log_id', type: 'uuid' })
-    runLogId: string
+    @ApiProperty({ required: false })
+    @Column({ name: 'run_log_id', type: 'uuid', nullable: true })
+    runLogId?: string
 
     @ApiProperty({ required: false })
     @Column({ name: 'idempotency_key', nullable: true, unique: true })

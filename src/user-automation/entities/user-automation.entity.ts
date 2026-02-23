@@ -1,4 +1,4 @@
-import { ApiHideProperty, ApiProperty } from '@nestjs/swagger'
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 
 import { BaseEntity } from '@common/database/base/base.entity'
@@ -27,17 +27,25 @@ export class UserAutomation extends BaseEntity {
     @Column({ name: 'template_id', type: 'uuid' })
     templateId: string
 
+    @ApiPropertyOptional()
+    @Column({ type: 'varchar', length: 120, nullable: true })
+    name?: string
+
     @ApiProperty()
     @Column({ name: 'trigger_type', type: 'enum', enum: TriggerTypeEnum })
     triggerType: TriggerTypeEnum
 
-    @ApiProperty({ type: [String], required: false })
+    @ApiPropertyOptional({ type: [String] })
     @Column({ name: 'time_start', type: 'timestamptz', array: true, nullable: true })
     timeStart?: Date[]
 
     @ApiProperty({ type: 'object', additionalProperties: true })
     @Column({ type: 'jsonb', nullable: true })
     parameters?: Record<string, any>
+
+    @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+    @Column({ name: 'schedule_config', type: 'jsonb', nullable: true })
+    scheduleConfig?: Record<string, any>
 
     @ApiHideProperty()
     @OneToMany(() => AutomationRunLog, (runLog) => runLog.userAutomation)

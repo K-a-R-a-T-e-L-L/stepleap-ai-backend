@@ -11,6 +11,10 @@ export class GptChatMessage extends BaseEntity {
     @Column({ name: 'user_id', type: 'uuid' })
     userId: string
 
+    @ApiProperty({ required: false })
+    @Column({ name: 'chat_dialog_id', type: 'uuid', nullable: true })
+    chatDialogId?: string
+
     @ApiProperty()
     @Column({ type: 'text' })
     prompt: string

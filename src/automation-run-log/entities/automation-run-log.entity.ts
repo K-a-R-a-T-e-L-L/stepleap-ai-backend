@@ -1,9 +1,10 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 
 import { BaseEntity } from '@common/database/base/base.entity'
 import { UserAutomation } from '../../user-automation/entities/user-automation.entity'
 import { RunLogStatusEnum } from '../enum/run-log-status.enum'
+import { AutomationRunStepEvent } from './automation-run-step-event.entity'
 
 @Entity('automation_run_log')
 export class AutomationRunLog extends BaseEntity {
@@ -35,4 +36,8 @@ export class AutomationRunLog extends BaseEntity {
     @ApiProperty({ required: false })
     @Column({ name: 'n8n_execution_id', nullable: true })
     n8nExecutionId?: string
+
+    @ApiProperty({ type: [AutomationRunStepEvent], required: false })
+    @OneToMany(() => AutomationRunStepEvent, (stepEvent) => stepEvent.runLog, { eager: true })
+    stepEvents?: AutomationRunStepEvent[]
 }

@@ -10,6 +10,7 @@ import { BillingService } from '../billing/billing.service'
 import { FileService } from '../file/services/file.service'
 import { NotificationService } from '../notification/notification.service'
 import { User } from '../system/user/entity/user.entity'
+import { CreateChatDialogDto } from './dto/create-chat-dialog.dto'
 import { CreateGptChatDto } from './dto/create-gpt-chat.dto'
 import {
     CreateSoraChatDto,
@@ -17,8 +18,10 @@ import {
     soraModelVariants,
     soraSizeVariants,
 } from './dto/create-sora-chat.dto'
+import { ChatDialog } from './entities/chat-dialog.entity'
 import { GptChatMessage } from './entities/gpt-chat-message.entity'
 import { SoraChatRun } from './entities/sora-chat-run.entity'
+import { ChatModelEnum } from './enum/chat-model.enum'
 import { ChatRunStatusEnum } from './enum/chat-run-status.enum'
 
 type OpenAiVideoStatus = 'queued' | 'in_progress' | 'completed' | 'failed'
@@ -35,6 +38,8 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
         private readonly gptChatRepository: Repository<GptChatMessage>,
         @InjectRepository(SoraChatRun)
         private readonly soraChatRunRepository: Repository<SoraChatRun>,
+        @InjectRepository(ChatDialog)
+        private readonly chatDialogRepository: Repository<ChatDialog>,
         private readonly billingService: BillingService,
         private readonly fileService: FileService,
         private readonly notificationService: NotificationService,
@@ -60,6 +65,38 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
+    async createDialog(userId: string, dto: CreateChatDialogDto) {
+        const title = dto.title?.trim() || this.getDefaultDialogTitle(dto.model)
+        return this.chatDialogRepository.save({
+            userId,
+            model: dto.model,
+            title,
+        })
+    }
+
+    listDialogs(userId: string, model?: ChatModelEnum) {
+        return this.chatDialogRepository.find({
+            where: {
+                userId,
+                ...(model ? { model } : {}),
+            },
+            order: { updatedAt: 'DESC' },
+            take: 100,
+        })
+    }
+
+    async deleteDialog(userId: string, id: string) {
+        const dialog = await this.chatDialogRepository.findOne({ where: { id, userId } })
+        if (!dialog) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND, 'Chat dialog not found')
+        }
+
+        await this.gptChatRepository.softDelete({ userId, chatDialogId: id })
+        await this.soraChatRunRepository.softDelete({ userId, chatDialogId: id })
+        await this.chatDialogRepository.softDelete({ id, userId })
+        return dialog
+    }
+
     async sendGptMessage(user: User, dto: CreateGptChatDto) {
         this.ensureOpenAiEnabled()
 
@@ -74,6 +111,7 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
             Number(this.configService.get<string>('GPT_CHAT_MAX_COMPLETION_TOKENS', '800')) ||
             800
         const estimatedPromptTokens = this.estimateTokens(prompt)
+        const dialog = await this.resolveDialog(user.id, ChatModelEnum.GPT, dto.chatDialogId)
 
         await this.billingService.canRun(user.id, ['gpt_prompt', 'gpt_completion'], {
             gpt_prompt: estimatedPromptTokens,
@@ -82,6 +120,7 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
 
         const message = await this.gptChatRepository.save({
             userId: user.id,
+            chatDialogId: dialog.id,
             prompt,
             model,
             status: ChatRunStatusEnum.PENDING,
@@ -119,7 +158,7 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
 
             await this.billingService.recordUsage(
                 user.id,
-                updated.id,
+                undefined,
                 [
                     { meterCode: 'gpt_prompt', qty: promptTokens },
                     { meterCode: 'gpt_completion', qty: completionTokens },
@@ -128,6 +167,7 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
                 { completionId: completion.id },
             )
 
+            await this.chatDialogRepository.update({ id: dialog.id }, { updatedAt: new Date() })
             return updated
         } catch (error) {
             const description = this.normalizeProviderError(error, 'Failed to generate GPT response')
@@ -140,9 +180,12 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    listGptMessages(userId: string) {
+    listGptMessages(userId: string, chatDialogId?: string) {
         return this.gptChatRepository.find({
-            where: { userId },
+            where: {
+                userId,
+                ...(chatDialogId ? { chatDialogId } : {}),
+            },
             order: { createdAt: 'DESC' },
             take: 50,
         })
@@ -170,12 +213,15 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
             throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, 'Invalid model value')
         }
 
+        const dialog = await this.resolveDialog(user.id, ChatModelEnum.SORA, dto.chatDialogId)
+
         await this.billingService.canRun(user.id, ['sora_seconds'], {
             sora_seconds: seconds,
         })
 
         let run: SoraChatRun = await this.soraChatRunRepository.save({
             userId: user.id,
+            chatDialogId: dialog.id,
             prompt,
             seconds,
             size,
@@ -214,6 +260,7 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
                 return this.findSoraRun(user.id, run.id)
             }
 
+            await this.chatDialogRepository.update({ id: dialog.id }, { updatedAt: new Date() })
             return run
         } catch (error) {
             const description = this.normalizeProviderError(error, 'Failed to start Sora generation')
@@ -227,9 +274,12 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    listSoraRuns(userId: string) {
+    listSoraRuns(userId: string, chatDialogId?: string) {
         return this.soraChatRunRepository.find({
-            where: { userId },
+            where: {
+                userId,
+                ...(chatDialogId ? { chatDialogId } : {}),
+            },
             order: { createdAt: 'DESC' },
             take: 50,
         })
@@ -241,6 +291,20 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
             throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND, 'Sora run not found')
         }
         return run
+    }
+
+    async sendSoraRunToTelegram(user: User, id: string) {
+        const run = await this.findSoraRun(user.id, id)
+        if (!run.outputUrl) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND, 'Sora result not found')
+        }
+        this.ensureSendableVideoUrl(run.outputUrl)
+        await this.notificationService.sendVideo(
+            user.telegramId,
+            run.outputUrl,
+            `Видео из чата Sora (${run.seconds}c, ${run.size})`,
+        )
+        return { ok: true }
     }
 
     private async pollSoraRuns() {
@@ -337,7 +401,7 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
         if (!successRun.usageRecorded) {
             await this.billingService.recordUsage(
                 successRun.userId,
-                successRun.id,
+                undefined,
                 [{ meterCode: 'sora_seconds', qty: successRun.seconds }],
                 `sora-chat:${successRun.id}`,
                 { openaiVideoId: successRun.openaiVideoId, outputUrl: successRun.outputUrl },
@@ -389,9 +453,56 @@ export class AiChatService implements OnModuleInit, OnModuleDestroy {
         return Math.max(1, Math.ceil((text || '').length / 4))
     }
 
+    private async resolveDialog(userId: string, model: ChatModelEnum, chatDialogId?: string) {
+        if (chatDialogId) {
+            const dialog = await this.chatDialogRepository.findOne({
+                where: { id: chatDialogId, userId, model },
+            })
+            if (!dialog) {
+                throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND, 'Chat dialog not found')
+            }
+            return dialog
+        }
+
+        const latest = await this.chatDialogRepository.findOne({
+            where: { userId, model },
+            order: { updatedAt: 'DESC' },
+        })
+
+        if (latest) {
+            return latest
+        }
+
+        return this.chatDialogRepository.save({
+            userId,
+            model,
+            title: this.getDefaultDialogTitle(model),
+        })
+    }
+
+    private getDefaultDialogTitle(model: ChatModelEnum) {
+        return model === ChatModelEnum.GPT ? 'GPT chat' : 'Sora chat'
+    }
+
     private ensureOpenAiEnabled() {
         if (!this.openai) {
             throw new ErrorDto(ErrorCodeEnum.ENTITY_CREATION_FAIL, 'OpenAI API key is not configured')
+        }
+    }
+
+    private ensureSendableVideoUrl(url: string) {
+        const value = (url || '').trim()
+        if (!value) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND, 'Video url is empty')
+        }
+
+        const s3Url = (this.configService.get<string>('S3_URL') || '').trim().replace(/\/+$/, '')
+        if (!s3Url) {
+            return
+        }
+
+        if (!value.startsWith(s3Url)) {
+            throw new ErrorDto(ErrorCodeEnum.FORBIDDEN, 'Only internal storage files can be sent to Telegram')
         }
     }
 

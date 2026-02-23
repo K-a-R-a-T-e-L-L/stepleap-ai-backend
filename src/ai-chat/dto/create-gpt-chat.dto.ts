@@ -1,11 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
+import { IsNumber, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator'
 
 export class CreateGptChatDto {
     @ApiProperty({ example: 'Write 5 short ideas for a promo video about a coffee shop.' })
     @IsString()
     @MaxLength(8000)
     prompt: string
+
+    @ApiPropertyOptional({ format: 'uuid' })
+    @IsOptional()
+    @IsUUID()
+    chatDialogId?: string
 
     @ApiPropertyOptional({ example: 'gpt-4o-mini' })
     @IsOptional()

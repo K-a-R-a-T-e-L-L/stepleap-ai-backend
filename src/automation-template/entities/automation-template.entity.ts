@@ -3,6 +3,7 @@ import { Column, Entity, OneToMany } from 'typeorm'
 
 import { BaseEntity } from '@common/database/base/base.entity'
 import { UserAutomation } from '../../user-automation/entities/user-automation.entity'
+import { AutomationTemplateStep } from './automation-template-step.entity'
 
 @Entity('automation_template')
 export class AutomationTemplate extends BaseEntity {
@@ -29,6 +30,10 @@ export class AutomationTemplate extends BaseEntity {
     @ApiPropertyOptional({ type: 'object', additionalProperties: { type: 'number' } })
     @Column({ name: 'max_units_per_run', type: 'jsonb', nullable: true })
     maxUnitsPerRun?: Record<string, number>
+
+    @ApiPropertyOptional({ type: [AutomationTemplateStep] })
+    @OneToMany(() => AutomationTemplateStep, (step) => step.template, { eager: true, cascade: true })
+    steps?: AutomationTemplateStep[]
 
     @ApiHideProperty()
     @OneToMany(() => UserAutomation, (userAutomation) => userAutomation.template)

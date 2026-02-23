@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger'
-import { IsDateString, IsEnum, IsNotEmpty, IsObject, IsOptional, IsUUID } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { IsDateString, IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator'
 import { TriggerTypeEnum } from '../enum/trigger-type.enum'
 
 export class CreateUserAutomationDto {
@@ -13,13 +13,24 @@ export class CreateUserAutomationDto {
     @IsNotEmpty()
     triggerType: TriggerTypeEnum
 
-    @ApiProperty({ type: [String], required: false })
+    @ApiPropertyOptional({ maxLength: 120 })
+    @IsString()
+    @MaxLength(120)
+    @IsOptional()
+    name?: string
+
+    @ApiPropertyOptional({ type: [String] })
     @IsDateString({}, { each: true })
     @IsOptional()
     timeStart?: string[]
 
-    @ApiProperty({ type: 'object', additionalProperties: true })
+    @ApiPropertyOptional({ type: 'object', additionalProperties: true })
     @IsObject()
     @IsOptional()
     parameters?: Record<string, any>
+
+    @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+    @IsObject()
+    @IsOptional()
+    scheduleConfig?: Record<string, any>
 }

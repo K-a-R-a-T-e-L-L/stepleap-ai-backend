@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator'
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator'
 
 export const soraDurationVariants = [4, 8, 12] as const
 export const soraSizeVariants = ['720x1280', '1280x720', '1024x1792', '1792x1024'] as const
@@ -10,6 +10,11 @@ export class CreateSoraChatDto {
     @IsString()
     @MaxLength(8000)
     prompt: string
+
+    @ApiPropertyOptional({ format: 'uuid' })
+    @IsOptional()
+    @IsUUID()
+    chatDialogId?: string
 
     @ApiProperty({ enum: soraDurationVariants })
     @IsIn(soraDurationVariants)

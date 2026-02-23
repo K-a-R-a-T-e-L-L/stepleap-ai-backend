@@ -39,10 +39,19 @@ export class AutomationRunLogService {
     }
 
     async update(id: string, updateAutomationRunLogDto: UpdateAutomationRunLogDto) {
-        const runLog = await this.findOne(id)
-        const updated = this.automationRunLogRepository.merge(runLog, updateAutomationRunLogDto)
+        await this.findOne(id)
 
-        return this.automationRunLogRepository.save(updated)
+        // Avoid merge/save here: merge may include eager relation side effects and null out FK fields.
+        const patch = Object.fromEntries(
+            Object.entries(updateAutomationRunLogDto).filter(([, value]) => value !== undefined),
+        ) as UpdateAutomationRunLogDto
+
+        if (!Object.keys(patch).length) {
+            return this.findOne(id)
+        }
+
+        await this.automationRunLogRepository.update({ id }, patch)
+        return this.findOne(id)
     }
 
     async remove(id: string) {
@@ -68,10 +77,10 @@ export class AutomationRunLogService {
         return result.affected ?? 0
     }
 
-    async findPendingOlderThan(before: Date) {
+    async findByStatusOlderThan(status: RunLogStatusEnum, before: Date) {
         return this.automationRunLogRepository.find({
             where: {
-                status: RunLogStatusEnum.PENDING,
+                status,
                 startTime: LessThan(before),
             },
             relations: {

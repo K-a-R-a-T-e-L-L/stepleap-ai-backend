@@ -155,7 +155,7 @@ export class BillingService {
 
     async recordUsage(
         userId: string,
-        runLogId: string,
+        runLogId: string | undefined,
         lineItems: UsageLineItemInput[],
         idempotencyKey?: string,
         rawPayload?: Record<string, any>,
@@ -177,7 +177,7 @@ export class BillingService {
             const balances = await this.ensureBalances(subscription)
 
             const usageEvent = await usageEventRepo.save({
-                runLogId,
+                runLogId: runLogId || null,
                 idempotencyKey,
                 rawPayload,
             })

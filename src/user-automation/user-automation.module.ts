@@ -7,9 +7,15 @@ import { UserAutomation } from './entities/user-automation.entity'
 import { AutomationRunLogModule } from '../automation-run-log/automation-run-log.module'
 import { N8nModule } from '../n8n/n8n.module'
 import { BillingModule } from '../billing/billing.module'
+import { AutomationRunLog } from '../automation-run-log/entities/automation-run-log.entity'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([UserAutomation]), AutomationRunLogModule, forwardRef(() => N8nModule), BillingModule],
+    imports: [
+        TypeOrmModule.forFeature([UserAutomation, AutomationRunLog]),
+        AutomationRunLogModule,
+        forwardRef(() => N8nModule),
+        BillingModule,
+    ],
     controllers: [UserAutomationController],
     providers: [UserAutomationService],
     exports: [UserAutomationService],

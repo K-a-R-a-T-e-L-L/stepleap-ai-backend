@@ -8,6 +8,8 @@ import { AutomationResultService } from '../automation-result/automation-result.
 import { RunLogStatusEnum } from '../automation-run-log/enum/run-log-status.enum'
 import { N8nCallbackDto } from './dto/n8n-callback.dto'
 import { UserAutomationService } from '../user-automation/user-automation.service'
+import { N8nProgressCallbackDto } from './dto/n8n-progress-callback.dto'
+import { AutomationRunStepEventService } from '../automation-run-log/automation-run-step-event.service'
 
 @Controller('n8n')
 @ApiTags('n8n')
@@ -18,14 +20,36 @@ export class N8nController {
         private readonly billingService: BillingService,
         private readonly automationResultService: AutomationResultService,
         private readonly userAutomationService: UserAutomationService,
+        private readonly automationRunStepEventService: AutomationRunStepEventService,
     ) {}
+
+    @Post('progress-callback')
+    @ApiOperation({ summary: 'Receive n8n step progress callback' })
+    @ApiResponse({ status: 200, description: 'Progress callback received' })
+    async progressCallback(@Body() dto: N8nProgressCallbackDto) {
+        const event = await this.automationRunStepEventService.record({
+            runLogId: dto.runLogId,
+            stepCode: dto.stepCode,
+            status: dto.status,
+            message: dto.message,
+            progress: dto.progress,
+            seq: dto.seq,
+            idempotencyKey: dto.idempotencyKey,
+            rawPayload: dto.rawPayload,
+        })
+
+        return { ok: true, eventId: event.id }
+    }
 
     @Post('callback')
     @ApiOperation({ summary: 'Receive n8n execution callback' })
     @ApiResponse({ status: 200, description: 'Callback received' })
     async callback(@Body() dto: N8nCallbackDto) {
         const existingRunLog = await this.automationRunLogService.findOne(dto.runLogId)
-        if (existingRunLog.status !== RunLogStatusEnum.PENDING) {
+        if (
+            existingRunLog.status === RunLogStatusEnum.SUCCESS ||
+            existingRunLog.status === RunLogStatusEnum.ERROR
+        ) {
             return { ok: true, ignored: true }
         }
 

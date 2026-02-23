@@ -11,4 +11,11 @@ export class NotificationService {
     async notify(chatId: string | number, message: string | FmtString) {
         return await this.bot.telegram.sendMessage(chatId, message)
     }
+
+    async sendVideo(chatId: string | number, videoUrl: string, caption?: string) {
+        return await this.bot.telegram.sendVideo(chatId, videoUrl, {
+            caption,
+            supports_streaming: true,
+        })
+    }
 }

@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsArray, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsArray, IsNotEmpty, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { AutomationTemplateStepDto } from './automation-template-step.dto'
 
 export class CreateAutomationTemplateDto {
     @ApiProperty()
@@ -31,4 +33,11 @@ export class CreateAutomationTemplateDto {
     @IsObject()
     @IsOptional()
     maxUnitsPerRun?: Record<string, number>
+
+    @ApiPropertyOptional({ type: [AutomationTemplateStepDto] })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => AutomationTemplateStepDto)
+    @IsOptional()
+    steps?: AutomationTemplateStepDto[]
 }
