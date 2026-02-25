@@ -28,8 +28,39 @@ export class AutomationRunLogService {
         })
     }
 
+    findAllForUser(userId: string, userAutomationId?: string) {
+        const qb = this.automationRunLogRepository
+            .createQueryBuilder('runLog')
+            .leftJoinAndSelect('runLog.stepEvents', 'stepEvents')
+            .leftJoinAndSelect('runLog.userAutomation', 'userAutomation')
+            .where('userAutomation.userId = :userId', { userId })
+            .orderBy('runLog.createdAt', 'DESC')
+
+        if (userAutomationId) {
+            qb.andWhere('runLog.userAutomationId = :userAutomationId', { userAutomationId })
+        }
+
+        return qb.getMany()
+    }
+
     async findOne(id: string) {
         const runLog = await this.automationRunLogRepository.findOne({ where: { id } })
+
+        if (!runLog) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND)
+        }
+
+        return runLog
+    }
+
+    async findOneForUser(userId: string, id: string) {
+        const runLog = await this.automationRunLogRepository
+            .createQueryBuilder('runLog')
+            .leftJoinAndSelect('runLog.stepEvents', 'stepEvents')
+            .leftJoinAndSelect('runLog.userAutomation', 'userAutomation')
+            .where('runLog.id = :id', { id })
+            .andWhere('userAutomation.userId = :userId', { userId })
+            .getOne()
 
         if (!runLog) {
             throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND)

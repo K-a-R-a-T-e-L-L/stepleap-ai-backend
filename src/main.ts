@@ -8,14 +8,30 @@ import { AppModule } from './app.module'
 import { TelegramLoggerService } from './logger/logger.service'
 import { AllExceptionsFilter } from './logger/all-exceptions.filter'
 import * as cookieParser from "cookie-parser";
+import * as express from 'express'
 
 async function bootstrap() {
     config()
     const app = await NestFactory.create(AppModule, {
         cors: { origin: '*' },
-        bodyParser: true,
+        bodyParser: false,
         logger: ['log', 'warn', 'error'],
     })
+    app.use(
+        express.json({
+            verify: (req: any, _res, buf) => {
+                req.rawBody = Buffer.from(buf)
+            },
+        }),
+    )
+    app.use(
+        express.urlencoded({
+            extended: true,
+            verify: (req: any, _res, buf) => {
+                req.rawBody = Buffer.from(buf)
+            },
+        }),
+    )
     app.setGlobalPrefix('api')
     app.useGlobalPipes(
         new ValidationPipe({

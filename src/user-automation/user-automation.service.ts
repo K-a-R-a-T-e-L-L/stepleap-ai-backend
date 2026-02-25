@@ -17,6 +17,13 @@ import { NotificationService } from '../notification/notification.service'
 import { TriggerTypeEnum } from './enum/trigger-type.enum'
 import { AutomationRunLog } from '../automation-run-log/entities/automation-run-log.entity'
 
+type DailyScheduleConfig = {
+    mode: 'daily'
+    dailyTime: string
+    timezone: string
+    nextRunAt: string
+}
+
 @Injectable()
 export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(UserAutomationService.name)
@@ -37,6 +44,11 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
     ) {}
 
     onModuleInit() {
+        void this.backfillDailyTimezone().catch((error) => {
+            const message = error instanceof Error ? error.message : String(error)
+            this.logger.error(`Daily timezone backfill failed: ${message}`)
+        })
+
         const pendingMonitorIntervalMs =
             Number(this.configService.get<string>('AUTOMATION_PENDING_CHECK_INTERVAL_MS', '60000')) || 60000
 
@@ -99,8 +111,35 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
         return automation
     }
 
+    async findOneForUser(userId: string, id: string) {
+        const automation = await this.userAutomationRepository.findOne({
+            where: { id, userId },
+        })
+
+        if (!automation) {
+            throw new ErrorDto(ErrorCodeEnum.ENTITY_NOT_FOUND)
+        }
+
+        return automation
+    }
+
     async update(id: string, updateUserAutomationDto: UpdateUserAutomationDto) {
         const automation = await this.findOne(id)
+        const nextTriggerType = (updateUserAutomationDto.triggerType ?? automation.triggerType) as TriggerTypeEnum
+        const nextScheduleSource = updateUserAutomationDto.scheduleConfig ?? automation.scheduleConfig
+        const normalized = this.normalizeScheduleForPersist(nextTriggerType, nextScheduleSource)
+
+        const updated = this.userAutomationRepository.merge(automation, {
+            ...updateUserAutomationDto,
+            triggerType: nextTriggerType,
+            scheduleConfig: normalized ?? undefined,
+        })
+
+        return this.userAutomationRepository.save(updated)
+    }
+
+    async updateForUser(userId: string, id: string, updateUserAutomationDto: UpdateUserAutomationDto) {
+        const automation = await this.findOneForUser(userId, id)
         const nextTriggerType = (updateUserAutomationDto.triggerType ?? automation.triggerType) as TriggerTypeEnum
         const nextScheduleSource = updateUserAutomationDto.scheduleConfig ?? automation.scheduleConfig
         const normalized = this.normalizeScheduleForPersist(nextTriggerType, nextScheduleSource)
@@ -121,12 +160,15 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
         return { id }
     }
 
-    async run(userId: string, automationId: string, dto?: RunAutomationDto) {
-        const automation = await this.findOne(automationId)
+    async removeForUser(userId: string, id: string) {
+        await this.findOneForUser(userId, id)
+        await this.userAutomationRepository.softDelete(id)
 
-        if (automation.userId !== userId) {
-            throw new ErrorDto(ErrorCodeEnum.FORBIDDEN)
-        }
+        return { id }
+    }
+
+    async run(userId: string, automationId: string, dto?: RunAutomationDto) {
+        const automation = await this.findOneForUser(userId, automationId)
 
         await this.billingService.canRun(
             userId,
@@ -290,11 +332,13 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
 
         if (mode === 'daily') {
             const dailyTime = this.normalizeDailyTime(schedule.dailyTime)
-            const nextRunAt = this.computeNextDailyRun(dailyTime, now).toISOString()
+            const timezone = this.normalizeTimezone(schedule.timezone)
+            const nextRunAt = this.computeNextDailyRun(dailyTime, now, timezone).toISOString()
 
             return {
                 mode,
                 dailyTime,
+                timezone,
                 nextRunAt,
             }
         }
@@ -334,6 +378,7 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
             return {
                 mode,
                 dailyTime: this.normalizeDailyTime(schedule.dailyTime),
+                timezone: this.normalizeTimezone(schedule.timezone),
                 nextRunAt: this.readValidDate(schedule.nextRunAt),
             }
         }
@@ -354,7 +399,7 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
         }
 
         if (schedule.mode === 'daily') {
-            const nextRunAt = schedule.nextRunAt ?? this.computeNextDailyRun(schedule.dailyTime, now)
+            const nextRunAt = schedule.nextRunAt ?? this.computeNextDailyRun(schedule.dailyTime, now, schedule.timezone)
             return nextRunAt.getTime() <= now.getTime()
         }
 
@@ -387,11 +432,13 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
 
         if (schedule.mode === 'daily') {
             const dailyTime = this.normalizeDailyTime(schedule.dailyTime)
+            const timezone = this.normalizeTimezone(schedule.timezone)
             return {
                 scheduleConfig: {
                     mode: 'daily',
                     dailyTime,
-                    nextRunAt: this.computeNextDailyRun(dailyTime, now).toISOString(),
+                    timezone,
+                    nextRunAt: this.computeNextDailyRun(dailyTime, now, timezone).toISOString(),
                 },
             }
         }
@@ -458,18 +505,144 @@ export class UserAutomationService implements OnModuleInit, OnModuleDestroy {
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
     }
 
-    private computeNextDailyRun(dailyTime: string, now: Date): Date {
+    private computeNextDailyRun(dailyTime: string, now: Date, timezone: string): Date {
         const [hoursRaw, minutesRaw] = dailyTime.split(':')
         const hours = this.clampInt(hoursRaw, 0, 23, 6)
         const minutes = this.clampInt(minutesRaw, 0, 59, 0)
-        const next = new Date(now)
-        next.setSeconds(0, 0)
-        next.setHours(hours, minutes, 0, 0)
+
+        const normalizedTimezone = this.normalizeTimezone(timezone)
+        const nowParts = this.getDateTimePartsInTimezone(now, normalizedTimezone)
+        let next = this.timezoneLocalDateTimeToUtc(
+            nowParts.year,
+            nowParts.month,
+            nowParts.day,
+            hours,
+            minutes,
+            normalizedTimezone,
+        )
 
         if (next.getTime() <= now.getTime()) {
-            next.setDate(next.getDate() + 1)
+            const nextDay = new Date(Date.UTC(nowParts.year, nowParts.month - 1, nowParts.day, 12, 0, 0))
+            nextDay.setUTCDate(nextDay.getUTCDate() + 1)
+            next = this.timezoneLocalDateTimeToUtc(
+                nextDay.getUTCFullYear(),
+                nextDay.getUTCMonth() + 1,
+                nextDay.getUTCDate(),
+                hours,
+                minutes,
+                normalizedTimezone,
+            )
         }
+
         return next
+    }
+
+    private normalizeTimezone(value: any): string {
+        const timezone = String(value || '').trim()
+        if (!timezone) {
+            return 'UTC'
+        }
+
+        try {
+            Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(new Date())
+            return timezone
+        } catch {
+            return 'UTC'
+        }
+    }
+
+    private getDateTimePartsInTimezone(date: Date, timezone: string) {
+        const dtf = new Intl.DateTimeFormat('en-CA', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hourCycle: 'h23',
+        })
+
+        const partMap = Object.fromEntries(
+            dtf
+                .formatToParts(date)
+                .filter((part) => part.type !== 'literal')
+                .map((part) => [part.type, Number(part.value)]),
+        ) as Record<string, number>
+
+        return {
+            year: partMap.year,
+            month: partMap.month,
+            day: partMap.day,
+            hour: partMap.hour,
+            minute: partMap.minute,
+            second: partMap.second,
+        }
+    }
+
+    private timezoneLocalDateTimeToUtc(
+        year: number,
+        month: number,
+        day: number,
+        hour: number,
+        minute: number,
+        timezone: string,
+    ): Date {
+        let utcTimestamp = Date.UTC(year, month - 1, day, hour, minute, 0)
+
+        // Resolve timezone offset (including DST) with a short fixed-point loop.
+        for (let i = 0; i < 5; i += 1) {
+            const observed = this.getDateTimePartsInTimezone(new Date(utcTimestamp), timezone)
+            const desiredAsUtc = Date.UTC(year, month - 1, day, hour, minute, 0)
+            const observedAsUtc = Date.UTC(
+                observed.year,
+                observed.month - 1,
+                observed.day,
+                observed.hour,
+                observed.minute,
+                observed.second || 0,
+            )
+            const diff = desiredAsUtc - observedAsUtc
+            if (diff === 0) {
+                break
+            }
+            utcTimestamp += diff
+        }
+
+        return new Date(utcTimestamp)
+    }
+
+    private async backfillDailyTimezone() {
+        const automations = await this.userAutomationRepository.find({
+            where: { triggerType: TriggerTypeEnum.SCHEDULE },
+        })
+
+        for (const automation of automations) {
+            const schedule = (automation.scheduleConfig || {}) as Record<string, any>
+            if (String(schedule.mode || '') !== 'daily') {
+                continue
+            }
+            if (schedule.timezone) {
+                continue
+            }
+
+            const dailyTime = this.normalizeDailyTime(schedule.dailyTime)
+            const timezone = 'UTC'
+            const nextRunAt = this.computeNextDailyRun(dailyTime, new Date(), timezone).toISOString()
+            const nextSchedule: DailyScheduleConfig = {
+                mode: 'daily',
+                dailyTime,
+                timezone,
+                nextRunAt,
+            }
+
+            await this.userAutomationRepository.update(
+                { id: automation.id },
+                {
+                    scheduleConfig: nextSchedule as Record<string, any>,
+                },
+            )
+        }
     }
 
     private readValidDate(value: any): Date | null {

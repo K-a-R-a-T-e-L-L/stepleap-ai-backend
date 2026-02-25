@@ -1,0 +1,827 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2704,
+        576
+      ],
+      "id": "2fdad116-c7e7-4f0a-8be2-613d4453b8bb",
+      "name": "CALLBACK",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "modelId": {
+          "__rl": true,
+          "value": "sora-2",
+          "mode": "list",
+          "cachedResultName": "SORA-2"
+        },
+        "prompt": "={{ $('GPT PROMPT').item.json.choices[0].message.content.prompt }}",
+        "seconds": "={{ $('Webhook').item.json.body.parameters.seconds }}",
+        "size": "={{ $('Webhook').item.json.body.parameters.size }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        592
+      ],
+      "id": "e5f65ad9-0b9e-4ef8-94f9-bb3720e387b8",
+      "name": "SORA VIDEO",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "0vnrS6blMachiJ6Q",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert in generating prompta for text-in-video models (Sora, Runway Gen-3, Pika 1.0). Your task is to transform the user's short ideas into detailed, technically accurate promptings optimized for the capabilities of modern video generators.\n\nGENERATION RULES:\n1. ALWAYS write prompta in ENGLISH (models are trained on English-language data).\n2. Structure the layout according to the template:\n[Scene/object], [shooting style], [lighting], [camera/object movement], [mood/atmosphere], [technical parameters]\n\n3. REQUIRED ELEMENTS:\n   • Shooting type: cinematic, macro, drone shot, dolly zoom, tracking shot, slow-motion\n   • Lighting: golden hour, soft diffused light, volumetric fog, neon glow, chiaroscuro\n   • Movement: gentle breeze, flowing water, camera slowly pans left, petals falling in slow motion\n   • Quality: 4K, photorealistic, Unreal Engine 5 render, film grain, anamorphic lens flare\n   • Aspect ratio: 16:9, 9:16 (for vertical video), 21:9 (cinematic)\n\n4. ADDITIONAL INFORMATION:\n   • For abstract queries, suggest 2-3 specific visual interpretations.\n   • For emotional requests, describe the color palette (\"warm orange tones for comfort\")\n\nRESPONSE FORMAT:\nJust a ready-made prompt without additional explanations, greetings, introductions, and so on, just the result.\n\nUser's idea: {{$json.body.parameters.prompt }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        0,
+        592
+      ],
+      "id": "adb1cd6b-ab04-4824-9fd0-1a9b9944ed7f",
+      "name": "GPT PROMPT",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "0vnrS6blMachiJ6Q",
+          "name": "OpenAi account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "52213dbe-2bc1-4fdd-9a9f-81484582c7f5",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        608
+      ],
+      "id": "ad25e2ce-6827-4b79-964f-428f55da78a8",
+      "name": "Webhook",
+      "webhookId": "52213dbe-2bc1-4fdd-9a9f-81484582c7f5",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.CALLBACK_URL.replace(/\\/+$/, '') + '/files/upload' }}",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "=data"
+            },
+            {
+              "name": "tag",
+              "value": "sora"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1744,
+        560
+      ],
+      "id": "353ade4d-d548-4385-814e-aa3a8a263e04",
+      "name": "SAVE VIDEO",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        560,
+        672
+      ],
+      "id": "04c6e645-ea4c-489c-a6b3-2d4754d153e8",
+      "name": "ERROR 2",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst callbackBase = $env.CALLBACK_URL;\nconst secret = $env.N8N_CALLBACK_SECRET;\n\nconst runLogId = $('Webhook').first().json.body.runLogId;\n\nconst errorMessage =\n  $json.errorMessage ||\n  $json.error ||\n  'GPT error';\n\nconst payload = {\n  runLogId,\n  errorMessage: String(errorMessage).slice(0, 4000),\n  status: \"error\",\n  idempotencyKey: `${runLogId}:gpt_prompt:final:error`,\n  rawPayload: {\n    source: 'n8n',\n    node: 'gpt_prompt-final-error-callback',\n    at: new Date().toISOString(),\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto.createHmac('sha256', secret).update(body).digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase.replace(/\\/+$/, '')}/n8n/callback`,\n    body,\n    signature,\n    payload\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        672
+      ],
+      "id": "a4b380fb-ed64-40ea-b45f-12283734b79e",
+      "name": "FORM CALLBACK ERROR 2",
+      "retryOnFail": true,
+      "waitBetweenTries": 500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst callbackBase = $env.CALLBACK_URL;\nconst secret = $env.N8N_CALLBACK_SECRET;\n\nconst runLogId = $('Webhook').first().json.body.runLogId;\n\nconst payload = {\n  runLogId,\n  stepCode: \"gpt_prompt\",\n  status: \"success\",\n  message: \"Chat GPT\",\n  progress: 32,\n  seq: 2,\n  idempotencyKey: `${runLogId}:gpt_prompt:step:success`,\n  rawPayload: {\n    source: \"n8n\",\n    node: \"gpt_prompt-step-success-callback\",\n    at: new Date().toISOString(),\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto.createHmac('sha256', secret).update(body).digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase.replace(/\\/+$/, '')}/n8n/progress-callback`,\n    body,\n    signature,\n    payload\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        512
+      ],
+      "id": "3d5c5e32-9b63-4e08-85f3-ff7eba745540",
+      "name": "FORM CALLBACK SUCCESS 2",
+      "retryOnFail": true,
+      "waitBetweenTries": 500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        560,
+        512
+      ],
+      "id": "d012c9ae-c5ef-49f9-b907-a15a518ce89d",
+      "name": "PROGRESS 2",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -208,
+        512
+      ],
+      "id": "35f81238-1c34-444d-a18b-9645408f57f5",
+      "name": "PROGRESS 1",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -208,
+        672
+      ],
+      "id": "28277f17-8c4d-4416-a547-e283294faa26",
+      "name": "ERROR 1",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst callbackBase = $env.CALLBACK_URL;\nconst secret = $env.N8N_CALLBACK_SECRET;\n\nconst runLogId = $json.body.runLogId;\n\nconst errorMessage =\n  $json.errorMessage ||\n  $json.error ||\n  'Webhook error';\n\nconst payload = {\n  runLogId,\n  errorMessage: String(errorMessage).slice(0, 4000),\n  status: \"error\",\n  idempotencyKey: `${runLogId}:webhook_started:final:error`,\n  rawPayload: {\n    source: 'n8n',\n    node: 'webhook_started-final-error-callback',\n    at: new Date().toISOString(),\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto.createHmac('sha256', secret).update(body).digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase.replace(/\\/+$/, '')}/n8n/callback`,\n    body,\n    signature,\n    payload\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        672
+      ],
+      "id": "de6c03f7-6267-44d1-b4b0-9e87602af441",
+      "name": "FORM CALLBACK ERROR 1",
+      "retryOnFail": true,
+      "waitBetweenTries": 500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst callbackBase = $env.CALLBACK_URL;\nconst secret = $env.N8N_CALLBACK_SECRET;\n\nconst runLogId = $('Webhook').first().json.body.runLogId;\n\nconst payload = {\n  runLogId,\n  stepCode: \"webhook_started\",\n  status: \"running\",\n  message: \"Webhook\",\n  progress: 11,\n  seq: 1,\n  idempotencyKey: `${runLogId}:webhook_started:step:success`,\n  rawPayload: {\n    source: \"n8n\",\n    node: \"webhook_started-step-success-callback\",\n    at: new Date().toISOString(),\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto.createHmac('sha256', secret).update(body).digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase.replace(/\\/+$/, '')}/n8n/progress-callback`,\n    body,\n    signature,\n    payload\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        512
+      ],
+      "id": "7c35c845-338a-46dc-8afa-00fa1915dfec",
+      "name": "FORM CALLBACK SUCCESS 1",
+      "retryOnFail": true,
+      "waitBetweenTries": 500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1264,
+        752
+      ],
+      "id": "b9f1d5c2-7203-4274-9e6f-663a64b422ad",
+      "name": "ERROR 3",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst callbackBase = $env.CALLBACK_URL;\nconst secret = $env.N8N_CALLBACK_SECRET;\n\nconst runLogId = $('Webhook').first().json.body.runLogId;\n\nconst errorMessage =\n  $json.errorMessage ||\n  $json.error ||\n  'Sora error';\n\nconst payload = {\n  runLogId,\n  errorMessage: String(errorMessage).slice(0, 4000),\n  status: \"error\",\n  idempotencyKey: `${runLogId}:sora_render:final:error`,\n  rawPayload: {\n    source: 'n8n',\n    node: 'sora_render-final-error-callback',\n    at: new Date().toISOString(),\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto.createHmac('sha256', secret).update(body).digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase.replace(/\\/+$/, '')}/n8n/callback`,\n    body,\n    signature,\n    payload\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        752
+      ],
+      "id": "801a469e-519f-45c3-81cc-9b3a1d2febf4",
+      "name": "FORM CALLBACK ERROR 3",
+      "retryOnFail": true,
+      "waitBetweenTries": 500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1536,
+        560
+      ],
+      "id": "3161e02e-55e4-41ea-be1c-4ef936f98ac1",
+      "name": "Merge",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst callbackBase = $env.CALLBACK_URL;\nconst secret = $env.N8N_CALLBACK_SECRET;\n\nconst runLogId = $('Webhook').first().json.body.runLogId;\n\nconst payload = {\n  runLogId,\n  stepCode: \"upload\",\n  status: \"success\",\n  message: \"Upload\",\n  progress: 99,\n  seq: 4,\n  idempotencyKey: `${runLogId}:upload:step:success`,\n  rawPayload: {\n    source: \"n8n\",\n    node: \"upload-step-success-callback\",\n    at: new Date().toISOString(),\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto.createHmac('sha256', secret).update(body).digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase.replace(/\\/+$/, '')}/n8n/progress-callback`,\n    body,\n    signature,\n    payload\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        432
+      ],
+      "id": "a2fb8040-6049-4b16-8d48-ee85bb3adb60",
+      "name": "FORM CALLBACK SUCCESS 4",
+      "retryOnFail": true,
+      "waitBetweenTries": 500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2208,
+        432
+      ],
+      "id": "3010d490-75a0-454b-950d-8717b9aff2f4",
+      "name": "PROGRESS 4",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst callbackBase = $env.CALLBACK_URL;\nconst secret = $env.N8N_CALLBACK_SECRET;\n\nconst runLogId = $('Webhook').first().json.body.runLogId;\n\nconst errorMessage =\n  $json.errorMessage ||\n  $json.error ||\n  'Upload error';\n\nconst payload = {\n  runLogId,\n  errorMessage: String(errorMessage).slice(0, 4000),\n  status: \"error\",\n  idempotencyKey: `${runLogId}:upload:final:error`,\n  rawPayload: {\n    source: 'n8n',\n    node: 'upload-final-error-callback',\n    at: new Date().toISOString(),\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto.createHmac('sha256', secret).update(body).digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase.replace(/\\/+$/, '')}/n8n/callback`,\n    body,\n    signature,\n    payload\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        704
+      ],
+      "id": "3254632a-4c4e-4bbb-84c9-e65c2040a967",
+      "name": "FORM CALLBACK ERROR 4",
+      "retryOnFail": true,
+      "waitBetweenTries": 500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2208,
+        704
+      ],
+      "id": "8f1e036a-9c0b-497b-a95b-3cccbd7aa7a8",
+      "name": "ERROR 4",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst promptTokens = $('GPT PROMPT').first().json?.usage?.prompt_tokens ?? 0;\nconst completionTokens = $('GPT PROMPT').first().json?.usage?.completion_tokens ?? 0;\nconst soraSeconds = $('Webhook').first().json?.body?.parameters?.seconds ?? 0;\nconst runLogId = $('Webhook').first().json?.body?.runLogId;\n\nif (!runLogId) {\n  throw new Error('runLogId is required');\n}\n\nconst callbackBase = String($env.CALLBACK_URL || '').replace(/\\/+$/, '');\nconst secret = String($env.N8N_CALLBACK_SECRET || '');\n\nif (!callbackBase || !secret) {\n  throw new Error('CALLBACK_URL or N8N_CALLBACK_SECRET is missing');\n}\n\nconst payload = {\n  runLogId,\n  status: 'success',\n  idempotencyKey: `${runLogId}:final:success:v1`,\n  usageLineItems: [\n    { meterCode: 'gpt_prompt', qty: Number(promptTokens) },\n    { meterCode: 'gpt_completion', qty: Number(completionTokens) },\n    { meterCode: 'sora_seconds', qty: Number(soraSeconds) },\n  ],\n  outputUrl: $('SAVE VIDEO').first().json?.originalUrl ?? null,\n  rawPayload: {\n    fileId: $('SAVE VIDEO').first().json?.id ?? null,\n    provider: 'openai_sora',\n    model: 'sora-2',\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto\n  .createHmac('sha256', secret)\n  .update(body)\n  .digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase}/n8n/callback`,\n    body,\n    signature,\n    payload,\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        576
+      ],
+      "id": "f98705e6-9d95-4760-9f8a-ddaafc6ec498",
+      "name": "FORM RESULT",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst callbackBase = $env.CALLBACK_URL;\nconst secret = $env.N8N_CALLBACK_SECRET;\n\nconst runLogId = $('Webhook').first().json.body.runLogId;\n\nconst errorMessage =\n  $json.errorMessage ||\n  $json.error ||\n  'Webhook error';\n\nconst payload = {\n  runLogId,\n  errorMessage: String(errorMessage).slice(0, 4000),\n  status: \"error\",\n  idempotencyKey: `${runLogId}:final:error`,\n  rawPayload: {\n    source: 'n8n',\n    node: 'final-error-callback',\n    at: new Date().toISOString(),\n  },\n};\n\nconst body = JSON.stringify(payload);\nconst signature = crypto.createHmac('sha256', secret).update(body).digest('hex');\n\nreturn {\n  json: {\n    url: `${callbackBase.replace(/\\/+$/, '')}/n8n/callback`,\n    body,\n    signature,\n    payload\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2944,
+        704
+      ],
+      "id": "2b72e942-4541-4686-b80d-ba4b1c451273",
+      "name": "FORM CALLBACK ERROR 5",
+      "retryOnFail": true,
+      "waitBetweenTries": 500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3152,
+        704
+      ],
+      "id": "222f8edd-018a-42f1-820d-8b39ab1697a9",
+      "name": "ERROR 5",
+      "retryOnFail": true
+    }
+  ],
+  "connections": {
+    "CALLBACK": {
+      "main": [
+        [],
+        [
+          {
+            "node": "FORM CALLBACK ERROR 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SORA VIDEO": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        []
+      ]
+    },
+    "GPT PROMPT": {
+      "main": [
+        [
+          {
+            "node": "FORM CALLBACK SUCCESS 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FORM CALLBACK ERROR 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "FORM CALLBACK SUCCESS 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FORM CALLBACK ERROR 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SAVE VIDEO": {
+      "main": [
+        [
+          {
+            "node": "FORM CALLBACK SUCCESS 4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FORM CALLBACK ERROR 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORM CALLBACK ERROR 2": {
+      "main": [
+        [
+          {
+            "node": "ERROR 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORM CALLBACK SUCCESS 2": {
+      "main": [
+        [
+          {
+            "node": "PROGRESS 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PROGRESS 2": {
+      "main": [
+        [
+          {
+            "node": "SORA VIDEO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "PROGRESS 1": {
+      "main": [
+        [
+          {
+            "node": "GPT PROMPT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORM CALLBACK ERROR 1": {
+      "main": [
+        [
+          {
+            "node": "ERROR 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORM CALLBACK SUCCESS 1": {
+      "main": [
+        [
+          {
+            "node": "PROGRESS 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORM CALLBACK ERROR 3": {
+      "main": [
+        [
+          {
+            "node": "ERROR 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "SAVE VIDEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORM CALLBACK SUCCESS 4": {
+      "main": [
+        [
+          {
+            "node": "PROGRESS 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PROGRESS 4": {
+      "main": [
+        [
+          {
+            "node": "FORM RESULT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORM CALLBACK ERROR 4": {
+      "main": [
+        [
+          {
+            "node": "ERROR 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ERROR 4": {
+      "main": [
+        []
+      ]
+    },
+    "FORM RESULT": {
+      "main": [
+        [
+          {
+            "node": "CALLBACK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "FORM CALLBACK ERROR 5": {
+      "main": [
+        [
+          {
+            "node": "ERROR 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "442aa542a37e98463643e5e2c948d6b918f5d54d0e032cf7a53c8f0aead1fe63"
+  }
+}

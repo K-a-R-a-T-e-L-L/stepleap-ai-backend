@@ -29,6 +29,46 @@ export class AutomationResultService {
         })
     }
 
+    findByRunLogForUser(runLogId: string, userId: string) {
+        return this.automationResultRepository
+            .createQueryBuilder('result')
+            .leftJoinAndSelect('result.runLog', 'runLog')
+            .leftJoin('runLog.userAutomation', 'userAutomation')
+            .where('result.runLogId = :runLogId', { runLogId })
+            .andWhere('userAutomation.userId = :userId', { userId })
+            .orderBy('result.createdAt', 'DESC')
+            .getMany()
+    }
+
+    async findLatestOutputByRunLogsForUser(runLogIds: string[], userId: string) {
+        if (!runLogIds.length) {
+            return {}
+        }
+
+        const rows = await this.automationResultRepository
+            .createQueryBuilder('result')
+            .select(['result.runLogId AS "runLogId"', 'result.outputUrl AS "outputUrl"'])
+            .leftJoin('result.runLog', 'runLog')
+            .leftJoin('runLog.userAutomation', 'userAutomation')
+            .where('result.runLogId IN (:...runLogIds)', { runLogIds })
+            .andWhere('userAutomation.userId = :userId', { userId })
+            .orderBy('result.createdAt', 'DESC')
+            .getRawMany<{ runLogId: string; outputUrl: string }>()
+
+        const latestByRunLogId = Object.fromEntries(runLogIds.map((id) => [id, null])) as Record<
+            string,
+            string | null
+        >
+
+        for (const row of rows) {
+            if (latestByRunLogId[row.runLogId] === null) {
+                latestByRunLogId[row.runLogId] = row.outputUrl || null
+            }
+        }
+
+        return latestByRunLogId
+    }
+
     async sendToTelegramByRunLog(runLogId: string, userId: string, telegramId: number) {
         const result = await this.automationResultRepository
             .createQueryBuilder('result')

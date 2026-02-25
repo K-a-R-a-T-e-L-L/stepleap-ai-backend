@@ -36,23 +36,27 @@ export class UserAutomationController {
     @UserAuth(UserAuthType.USER)
     @ApiOperation({ summary: 'Get user automation by id' })
     @ApiResponse({ status: 200, type: UserAutomation })
-    findOne(@Param('id') id: string) {
-        return this.userAutomationService.findOne(id)
+    findOne(@UserDecorator() user: User, @Param('id') id: string) {
+        return this.userAutomationService.findOneForUser(user.id, id)
     }
 
     @Patch(':id')
     @UserAuth(UserAuthType.USER)
     @ApiOperation({ summary: 'Update user automation by id' })
     @ApiResponse({ status: 200, type: UserAutomation })
-    update(@Param('id') id: string, @Body() updateUserAutomationDto: UpdateUserAutomationDto) {
-        return this.userAutomationService.update(id, updateUserAutomationDto)
+    update(
+        @UserDecorator() user: User,
+        @Param('id') id: string,
+        @Body() updateUserAutomationDto: UpdateUserAutomationDto,
+    ) {
+        return this.userAutomationService.updateForUser(user.id, id, updateUserAutomationDto)
     }
 
     @Delete(':id')
     @UserAuth(UserAuthType.USER)
     @ApiOperation({ summary: 'Delete user automation by id' })
-    remove(@Param('id') id: string) {
-        return this.userAutomationService.remove(id)
+    remove(@UserDecorator() user: User, @Param('id') id: string) {
+        return this.userAutomationService.removeForUser(user.id, id)
     }
 
     @Post(':id/run')

@@ -39,6 +39,7 @@ export const validationSchema = Joi.object({
     AUTOMATION_RUNNING_TIMEOUT_MS: Joi.number().integer().min(10000).default(1800000),
     AUTOMATION_PENDING_CHECK_INTERVAL_MS: Joi.number().integer().min(5000).default(60000),
     AUTOMATION_SCHEDULER_INTERVAL_MS: Joi.number().integer().min(5000).default(30000),
+    N8N_CALLBACK_SECRET: Joi.string().min(8).required(),
     ENV: Joi.string().valid('dev', 'production').required(),
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
 })
