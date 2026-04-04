@@ -75,7 +75,7 @@ type NormalizedVacancy = {
 @Injectable()
 export class CareerService {
     private readonly logger = new Logger(CareerService.name)
-    private readonly llmProvider: 'ollama' | 'gemini' | 'groq' | 'none'
+    private readonly llmProvider: 'openai' | 'none'
     private readonly llmModel: string
     private readonly remoteOkUrl: string
     private readonly remoteOkSyncLimit: number
@@ -125,39 +125,20 @@ export class CareerService {
         this.llmNormalizeLimit = Number(this.configService.get<string>('LLM_NORMALIZE_LIMIT') || 3)
         const llmTimeoutMs = Number(this.configService.get<string>('LLM_TIMEOUT_MS') || 120000)
 
-        const ollamaBaseUrlRaw = this.configService.get<string>('OLLAMA_BASE_URL') || ''
-        const ollamaModel = this.configService.get<string>('OLLAMA_MODEL') || 'qwen3:0.6b'
-        const ollamaApiKey = this.configService.get<string>('OLLAMA_API_KEY') || 'ollama'
-        const groqApiKey = this.configService.get<string>('GROQ_API_KEY')
-        const geminiApiKey = this.configService.get<string>('GEMINI_API_KEY')
-        const ollamaBaseUrl = ollamaBaseUrlRaw.replace(/\/+$/, '').replace(/\/api$/, '')
+        const openaiApiKey = this.configService.get<string>('OPENAI_API_KEY')
+        const openaiModel = this.configService.get<string>('OPENAI_MODEL') || 'gpt-4o-mini'
+        const openaiBaseUrl = this.configService.get<string>('OPENAI_BASE_URL') || 'https://api.openai.com/v1'
+        const openaiOrgId = this.configService.get<string>('OPENAI_ORG_ID') || ''
 
-        if (ollamaBaseUrl) {
-            this.llmProvider = 'ollama'
-            this.llmModel = ollamaModel
+        if (openaiApiKey) {
+            this.llmProvider = 'openai'
+            this.llmModel = openaiModel
             this.llm = new OpenAI({
-                apiKey: ollamaApiKey,
-                baseURL: `${ollamaBaseUrl}/v1`,
+                apiKey: openaiApiKey,
+                baseURL: openaiBaseUrl,
                 maxRetries: 0,
                 timeout: llmTimeoutMs,
-            })
-        } else if (geminiApiKey) {
-            this.llmProvider = 'gemini'
-            this.llmModel = this.configService.get<string>('GEMINI_MODEL') || 'models/gemini-2.5-flash'
-            this.llm = new OpenAI({
-                apiKey: geminiApiKey,
-                baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
-                maxRetries: 0,
-                timeout: llmTimeoutMs,
-            })
-        } else if (groqApiKey) {
-            this.llmProvider = 'groq'
-            this.llmModel = this.configService.get<string>('GROQ_MODEL') || 'llama-3.3-70b-versatile'
-            this.llm = new OpenAI({
-                apiKey: groqApiKey,
-                baseURL: 'https://api.groq.com/openai/v1',
-                maxRetries: 0,
-                timeout: llmTimeoutMs,
+                ...(openaiOrgId ? { organization: openaiOrgId } : {}),
             })
         } else {
             this.llmProvider = 'none'
@@ -947,6 +928,25 @@ export class CareerService {
         return `1) Спринт по навыку «${focusSkill}» (${sprintDuration}) 2) ${deliverable} 3) ${action3}`
     }
 
+    private mapRawVacancyToDto(rawEntity: CareerVacancyRawEntity, index: number): CareerVacancyDto {
+        const payload = (rawEntity.payload || {}) as RemoteOkJob
+        const company = (payload.company || '').trim()
+        const position = (payload.position || '').trim()
+        const title = position && company ? `${position} — ${company}` : position || company || 'Вакансия'
+        return {
+            id: `raw-${rawEntity.externalId}-${index}`,
+            title,
+            mode: (payload.location || '').trim() || 'формат не указан',
+            match: 0,
+            matchReason: 'Пока без AI-матчинга: показываем вакансию из фида.',
+            gap: '',
+            plan: '',
+            sourceUrl: payload.url || null,
+            applyUrl: payload.apply_url || payload.url || null,
+            sourceName: 'Remote OK',
+        }
+    }
+
     async getVacancies(trackId: string | undefined, telegramId: number): Promise<CareerVacancyDto[]> {
         const targetVacancyCount = 5
         const profile = (await this.getProfile(telegramId)).profile
@@ -991,7 +991,7 @@ export class CareerService {
             }
         }
 
-        const result = vacancyPool
+        let result = vacancyPool
             .map((vacancy) => ({ vacancy, match: this.computeVacancyMatch(profile, vacancy, primaryTrack) }))
             .sort((a, b) => b.match.score - a.match.score)
             .slice(0, targetVacancyCount)
@@ -1007,6 +1007,22 @@ export class CareerService {
                 applyUrl: vacancy.applyUrl,
                 sourceName: 'Remote OK',
             }))
+
+        if (result.length < targetVacancyCount) {
+            const rawVacancies = await this.vacancyRawRepository.find({
+                where: { source: 'remoteok' },
+                order: { fetchedAt: 'DESC' },
+                take: 14,
+            })
+            const ids = new Set(result.map((item) => item.id))
+            for (const raw of rawVacancies) {
+                if (result.length >= targetVacancyCount) break
+                const dto = this.mapRawVacancyToDto(raw, result.length + 1)
+                if (ids.has(dto.id)) continue
+                result.push(dto)
+                ids.add(dto.id)
+            }
+        }
 
         await this.vacancyCacheRepository.upsert(
             {
@@ -1090,9 +1106,8 @@ export class CareerService {
                     return null
                 }
 
-                const slug = this.toTrackId(raw.title)
                 return {
-                    id: `${targetTrack}-${slug}-${index + 1}`,
+                    id: `${targetTrack}-step-${index + 1}`,
                     title: raw.title.trim(),
                     duration: raw.duration.trim(),
                     status: 'доступно',
@@ -1227,7 +1242,7 @@ export class CareerService {
         const desiredCount = Math.max(3, Math.min(6, 3 + Math.min(topGaps.length, 2)))
         const selected = plan.slice(0, desiredCount - 1).concat(plan[plan.length - 1])
         return selected.map((item, index) => ({
-            id: `${targetTrack}-${item.slug}-${index + 1}`,
+            id: `${targetTrack}-step-${index + 1}`,
             title: item.title,
             duration: item.duration,
             status: 'доступно',
@@ -1314,11 +1329,25 @@ export class CareerService {
                 ['telegramId', 'profileHash', 'trackId'],
             )
         }
-        const currentIndex = checkpoints.findIndex((item) => !completed.has(item.id))
+        const normalizedCheckpoints = checkpoints
+            .map((item, index) => ({
+                ...item,
+                order: item.order || index + 1,
+                id: `${targetTrack}-step-${item.order || index + 1}`,
+            }))
+            .sort((a, b) => a.order - b.order)
 
-        return checkpoints.map((item, index) => {
-            const isCompleted = completed.has(item.id)
-            const isCurrent = currentIndex === -1 ? index === checkpoints.length - 1 : index === currentIndex
+        const completedWithLegacy = new Set(completed)
+        for (const item of checkpoints) {
+            const migratedId = `${targetTrack}-step-${item.order}`
+            if (completed.has(item.id)) completedWithLegacy.add(migratedId)
+        }
+
+        const currentIndex = normalizedCheckpoints.findIndex((item) => !completedWithLegacy.has(item.id))
+
+        return normalizedCheckpoints.map((item, index) => {
+            const isCompleted = completedWithLegacy.has(item.id)
+            const isCurrent = currentIndex === -1 ? index === normalizedCheckpoints.length - 1 : index === currentIndex
             const status = isCompleted ? 'завершен' : isCurrent ? 'текущий' : 'доступно'
 
             return {

@@ -6,10 +6,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     constructor(private readonly logger: TelegramLoggerService) {}
 
     catch(exception: unknown, host: ArgumentsHost) {
-        const ctx = host.switchToHttp()
-        const response = ctx.getResponse()
-        const request = ctx.getRequest()
-
+        const hostType = host.getType<'http' | 'rpc' | 'ws'>()
         const status =
             exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR
 
@@ -17,6 +14,35 @@ export class AllExceptionsFilter implements ExceptionFilter {
             exception instanceof HttpException
                 ? exception.getResponse()
                 : { statusCode: status, message: 'Internal server error' }
+
+        // Telegraf/WS/RPC exceptions do not have Express response/status.
+        if (hostType !== 'http') {
+            if (status >= 500) {
+                this.logger.error(
+                    {
+                        status,
+                        type: hostType,
+                        message,
+                    },
+                    exception instanceof Error ? exception.stack : undefined,
+                    'Exception',
+                )
+            } else {
+                this.logger.warn(
+                    {
+                        status,
+                        type: hostType,
+                        message,
+                    },
+                    'Exception',
+                )
+            }
+            return
+        }
+
+        const ctx = host.switchToHttp()
+        const response = ctx.getResponse()
+        const request = ctx.getRequest()
 
         const payload = {
             status,
