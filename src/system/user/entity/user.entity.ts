@@ -2,8 +2,6 @@ import { ApiHideProperty, ApiProperty } from '@nestjs/swagger'
 import { Column, Entity, ManyToMany, OneToMany, OneToOne } from 'typeorm'
 import { BaseEntity } from '@common/database/base/base.entity'
 import { RolesEnum } from '../enum/roles.enum'
-import { Subscription } from '../../../subscription/entity/subscription.entity'
-import { UserAutomation } from '../../../user-automation/entities/user-automation.entity'
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -33,12 +31,4 @@ export class User extends BaseEntity {
 
     @Column({ type: 'enum', enum: RolesEnum, default: RolesEnum.USER })
     role: RolesEnum
-
-    // Inverse side must point to the relation property on Subscription
-    @OneToOne(() => Subscription, (subscription) => subscription.user)
-    subscription: Subscription
-
-    @ApiHideProperty()
-    @OneToMany(() => UserAutomation, (userAutomation) => userAutomation.user)
-    userAutomations: UserAutomation[]
 }

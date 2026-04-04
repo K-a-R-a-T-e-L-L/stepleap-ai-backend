@@ -168,7 +168,6 @@ export class UserService {
                 telegramId: telegramId,
             },
             relations: {
-                subscription: true,
             },
         })
     }

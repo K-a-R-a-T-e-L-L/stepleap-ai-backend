@@ -42,7 +42,7 @@ export class BotUpdate implements OnModuleInit {
             parse_mode: 'MarkdownV2',
             ...Markup.inlineKeyboard([
                 Markup.button.webApp('Открыть прод', 'https://ai.alexlnos.com'),
-                Markup.button.webApp('Открыть дев', 'https://localhost.ru:3000'),
+                Markup.button.webApp('Открыть дев', 'https://172.18.0.1:3000'),
             ]),
         })
     }

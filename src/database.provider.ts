@@ -9,6 +9,9 @@ export const buildDataSourceOptions = (configService: ConfigService): DataSource
     password: configService.get('DATABASE_PASSWORD'),
     database: configService.get('DATABASE_DB'),
     entities: [__dirname + '/**/*.entity.{ts,js}'],
-    logging: process.env.ENV == 'dev',
-    synchronize: true,
+    logging: configService.get<string>('DATABASE_LOGGING') === 'true',
+    synchronize:
+        configService.get<string>('DATABASE_SYNCHRONIZE') == null
+            ? true
+            : configService.get<string>('DATABASE_SYNCHRONIZE') === 'true',
 })

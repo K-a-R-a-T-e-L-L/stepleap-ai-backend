@@ -10,7 +10,6 @@
         "resolveJsonModule": true,
         "sourceMap": true,
         "outDir": "./dist",
-        "baseUrl": "./",
         "incremental": true,
         "skipLibCheck": true,
         "strictNullChecks": false,
@@ -20,10 +19,10 @@
         "noFallthroughCasesInSwitch": false,
         "paths": {
             "@common": [
-                "common/"
+                "./common/"
             ],
             "@common/*": [
-                "common/*"
+                "./common/*"
             ]
         }
     },
